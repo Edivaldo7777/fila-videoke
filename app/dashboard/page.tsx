@@ -14,6 +14,8 @@ export default function Dashboard() {
   const [roomCode, setRoomCode] = useState("");
   const [roomName, setRoomName] = useState("");
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [currentUser, setCurrentUser] =
+    useState<any>(null);
   const [checkingLogin, setCheckingLogin] =
     useState(true);
 
@@ -30,6 +32,8 @@ export default function Dashboard() {
 
     return;
   }
+
+  setCurrentUser(user);
 
   loadRooms();
 
@@ -271,12 +275,49 @@ async function loadRooms() {
 }
   
   return (
-    <main className="min-h-screen bg-slate-100 p-8">
-      <div className="flex justify-between items-center mb-6">
+    <div className="flex justify-between items-center mb-6">
 
-  <h1 className="text-4xl font-bold">
-    🎤 Painel do Operador
-  </h1>
+  <div>
+
+    <h1 className="text-4xl font-bold">
+      🎤 Painel do Operador
+    </h1>
+
+    {currentUser && (
+
+      <div className="mt-2 text-sm text-slate-600">
+
+        <div>
+
+          {currentUser.role === "admin"
+            ? "👑 Administrador"
+            : `👤 ${currentUser.name}`}
+
+        </div>
+
+        {currentUser.role !== "admin" && (
+
+          <div>
+
+            Salas utilizadas:
+            {" "}
+            {rooms.length}
+            {" / "}
+            {currentUser.max_rooms}
+
+          </div>
+
+        )}
+
+        <div>
+          Status: {currentUser.status}
+        </div>
+
+      </div>
+
+    )}
+
+  </div>
 
   <button
     onClick={() => {
