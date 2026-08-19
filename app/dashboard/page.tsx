@@ -173,6 +173,71 @@ async function loadRooms() {
 
   loadRooms();
 }
+  
+  async function deleteRoom(
+  roomCode: string
+) {
+
+  const confirmed = confirm(
+    "Tem certeza que deseja excluir esta sala?"
+  );
+
+  if (!confirmed) return;
+
+  await supabase
+    .from("queue")
+    .delete()
+    .eq(
+      "room_code",
+      roomCode
+    );
+
+  await supabase
+    .from("current_singer")
+    .delete()
+    .eq(
+      "room_code",
+      roomCode
+    );
+
+  await supabase
+    .from("performances")
+    .delete()
+    .eq(
+      "room_code",
+      roomCode
+    );
+
+  await supabase
+    .from("event_status")
+    .delete()
+    .eq(
+      "room_code",
+      roomCode
+    );
+
+  await supabase
+    .from("hall_of_fame")
+    .delete()
+    .eq(
+      "room_code",
+      roomCode
+    );
+
+  await supabase
+    .from("rooms")
+    .delete()
+    .eq(
+      "room_code",
+      roomCode
+    );
+
+  alert(
+    "Sala excluída com sucesso."
+  );
+
+  loadRooms();
+}
 
   const roomUrl =
     roomCode !== ""
