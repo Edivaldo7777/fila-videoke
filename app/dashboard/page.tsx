@@ -184,56 +184,93 @@ async function loadRooms() {
 
   if (!confirmed) return;
 
-  await supabase
-    .from("queue")
-    .delete()
-    .eq(
-      "room_code",
-      roomCode
-    );
+  const queueResult =
+    await supabase
+      .from("queue")
+      .delete()
+      .eq(
+        "room_code",
+        roomCode
+      );
 
-  await supabase
-    .from("current_singer")
-    .delete()
-    .eq(
-      "room_code",
-      roomCode
-    );
+  console.log(
+    "QUEUE:",
+    queueResult
+  );
 
-  await supabase
-    .from("performances")
-    .delete()
-    .eq(
-      "room_code",
-      roomCode
-    );
+  const currentResult =
+    await supabase
+      .from("current_singer")
+      .delete()
+      .eq(
+        "room_code",
+        roomCode
+      );
 
-  await supabase
-    .from("event_status")
-    .delete()
-    .eq(
-      "room_code",
-      roomCode
-    );
+  console.log(
+    "CURRENT:",
+    currentResult
+  );
 
-  await supabase
-    .from("hall_of_fame")
-    .delete()
-    .eq(
-      "room_code",
-      roomCode
-    );
+  const performanceResult =
+    await supabase
+      .from("performances")
+      .delete()
+      .eq(
+        "room_code",
+        roomCode
+      );
 
-  await supabase
-    .from("rooms")
-    .delete()
-    .eq(
-      "room_code",
-      roomCode
-    );
+  console.log(
+    "PERFORMANCES:",
+    performanceResult
+  );
+
+  const eventResult =
+    await supabase
+      .from("event_status")
+      .delete()
+      .eq(
+        "room_code",
+        roomCode
+      );
+
+  console.log(
+    "EVENT_STATUS:",
+    eventResult
+  );
+
+  const hallResult =
+    await supabase
+      .from("hall_of_fame")
+      .delete()
+      .eq(
+        "room_code",
+        roomCode
+      );
+
+  console.log(
+    "HALL_OF_FAME:",
+    hallResult
+  );
+
+  const roomResult =
+    await supabase
+      .from("rooms")
+      .delete()
+      .eq(
+        "room_code",
+        roomCode
+      )
+      .select();
+
+  console.log(
+    "ROOM RESULT:",
+    roomResult
+  );
 
   alert(
-    "Sala excluída com sucesso."
+    "Verifique o Console (F12)"
   );
 
   loadRooms();
