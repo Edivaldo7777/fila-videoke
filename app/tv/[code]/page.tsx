@@ -47,7 +47,13 @@ export default function TvPage({
     useState("");
   
   const [eventStatus, setEventStatus] =
-  useState("running");
+    useState("running");
+  
+  const [authorized, setAuthorized] =
+    useState(false);
+
+  const [checkingAccess, setCheckingAccess] =
+    useState(true);
 
   useEffect(() => {
     async function init() {
@@ -66,30 +72,71 @@ export default function TvPage({
   }, [params]);
 
   useEffect(() => {
-    if (!roomCode) return;
 
-    loadData();
+  if (!roomCode) return;
 
-    const queueTimer = setInterval(() => {
+  async function validateAccess() {
+
+    const user = JSON.parse(
+      localStorage.getItem("user") || "{}"
+    );
+
+    const { data: room } =
+      await supabase
+        .from("rooms")
+        .select("*")
+        .eq(
+          "room_code",
+          roomCode
+        )
+        .single();
+
+    if (!room) {
+      setCheckingAccess(false);
+      return;
+    }
+
+    if (
+      user.role === "admin" ||
+      room.owner_id === user.id
+    ) {
+
+      setAuthorized(true);
+
       loadData();
-    }, 5000);
 
-    const clockTimer = setInterval(() => {
-      const now = new Date();
+      const queueTimer =
+        setInterval(() => {
+          loadData();
+        }, 5000);
 
-      setClock(
-        now.toLocaleTimeString("pt-BR", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      );
-    }, 1000);
+      const clockTimer =
+        setInterval(() => {
+          const now = new Date();
 
-    return () => {
-      clearInterval(queueTimer);
-      clearInterval(clockTimer);
-    };
-  }, [roomCode]);
+          setClock(
+            now.toLocaleTimeString(
+              "pt-BR",
+              {
+                hour: "2-digit",
+                minute: "2-digit",
+              }
+            )
+          );
+        }, 1000);
+
+      return () => {
+        clearInterval(queueTimer);
+        clearInterval(clockTimer);
+      };
+    }
+
+    setCheckingAccess(false);
+  }
+
+  validateAccess();
+
+}, [roomCode]);
 
   async function loadVotes(
     singerToken: string
@@ -311,6 +358,32 @@ const { data: votes } =
     queue.length > 0
       ? queue[0]
       : null;
+  
+  if (checkingAccess) {
+  return (
+    <main className="min-h-screen flex items-center justify-center">
+      Verificando acesso...
+    </main>
+  );
+}
+
+if (!authorized) {
+  return (
+    <main className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+
+        <h1 className="text-4xl font-black mb-4">
+          🔒 ACESSO NEGADO
+        </h1>
+
+        <p>
+          Você não é proprietário desta sala.
+        </p>
+
+      </div>
+    </main>
+  );
+}
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black text-white p-10">
