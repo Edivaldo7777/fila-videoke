@@ -178,38 +178,62 @@ async function loadRooms() {
   roomCode: string
 ) {
 
-  console.log(
-    "ROOM CODE RECEBIDO:",
-    roomCode
+  const confirmed = confirm(
+    "Tem certeza que deseja excluir esta sala?"
   );
 
-  const { data: roomBefore } =
-    await supabase
-      .from("rooms")
-      .select("*")
-      .eq(
-        "room_code",
-        roomCode
-      );
+  if (!confirmed) return;
 
-  console.log(
-    "ROOM BEFORE:",
-    roomBefore
-  );
+  await supabase
+    .from("queue")
+    .delete()
+    .eq(
+      "room_code",
+      roomCode
+    );
 
-  const roomResult =
-    await supabase
-      .from("rooms")
-      .delete()
-      .eq(
-        "room_code",
-        roomCode
-      )
-      .select();
+  await supabase
+    .from("current_singer")
+    .delete()
+    .eq(
+      "room_code",
+      roomCode
+    );
 
-  console.log(
-    "ROOM RESULT:",
-    roomResult
+  await supabase
+    .from("performances")
+    .delete()
+    .eq(
+      "room_code",
+      roomCode
+    );
+
+  await supabase
+    .from("event_status")
+    .delete()
+    .eq(
+      "room_code",
+      roomCode
+    );
+
+  await supabase
+    .from("hall_of_fame")
+    .delete()
+    .eq(
+      "room_code",
+      roomCode
+    );
+
+  await supabase
+    .from("rooms")
+    .delete()
+    .eq(
+      "room_code",
+      roomCode
+    );
+
+  alert(
+    "Sala excluída com sucesso."
   );
 
   loadRooms();
