@@ -49,6 +49,8 @@ export default function OperatorPage({
 
   if (!roomCode) return;
 
+  let timer: NodeJS.Timeout;
+
   async function validateAccess() {
 
     const user = JSON.parse(
@@ -74,13 +76,28 @@ export default function OperatorPage({
       user.role === "admin" ||
       room.owner_id === user.id
     ) {
+
       setAuthorized(true);
+
+      await loadData();
+
+      timer = setInterval(
+        loadData,
+        5000
+      );
+
     }
 
     setCheckingAccess(false);
   }
 
   validateAccess();
+
+  return () => {
+    if (timer) {
+      clearInterval(timer);
+    }
+  };
 
 }, [roomCode]);
 
