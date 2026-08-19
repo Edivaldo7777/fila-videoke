@@ -272,9 +272,29 @@ async function loadRooms() {
   
   return (
     <main className="min-h-screen bg-slate-100 p-8">
-      <h1 className="text-4xl font-bold mb-6">
-        🎤 Painel do Operador
-      </h1>
+      <div className="flex justify-between items-center mb-6">
+
+  <h1 className="text-4xl font-bold">
+    🎤 Painel do Operador
+  </h1>
+
+  <button
+    onClick={() => {
+
+      localStorage.removeItem(
+        "user"
+      );
+
+      window.location.href =
+        "/auth/login";
+
+    }}
+    className="bg-red-600 text-white px-4 py-2 rounded"
+  >
+    🚪 Sair
+  </button>
+
+</div>
 
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <label className="block font-bold mb-2">
