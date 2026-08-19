@@ -97,39 +97,42 @@ export default function TvPage({
     }
 
     if (
-      user.role === "admin" ||
-      room.owner_id === user.id
-    ) {
+  user.role === "admin" ||
+  room.owner_id === user.id
+) {
 
-      setAuthorized(true);
+  setAuthorized(true);
+  setCheckingAccess(false);
 
+  loadData();
+
+  const queueTimer =
+    setInterval(() => {
       loadData();
+    }, 5000);
 
-      const queueTimer =
-        setInterval(() => {
-          loadData();
-        }, 5000);
+  const clockTimer =
+    setInterval(() => {
 
-      const clockTimer =
-        setInterval(() => {
-          const now = new Date();
+      const now = new Date();
 
-          setClock(
-            now.toLocaleTimeString(
-              "pt-BR",
-              {
-                hour: "2-digit",
-                minute: "2-digit",
-              }
-            )
-          );
-        }, 1000);
+      setClock(
+        now.toLocaleTimeString(
+          "pt-BR",
+          {
+            hour: "2-digit",
+            minute: "2-digit",
+          }
+        )
+      );
 
-      return () => {
-        clearInterval(queueTimer);
-        clearInterval(clockTimer);
-      };
-    }
+    }, 1000);
+
+  return () => {
+    clearInterval(queueTimer);
+    clearInterval(clockTimer);
+  };
+}
 
     setCheckingAccess(false);
   }
