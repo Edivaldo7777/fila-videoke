@@ -275,67 +275,69 @@ async function loadRooms() {
 }
   
   return (
+  <main className="min-h-screen bg-slate-100 p-8">
+
     <div className="flex justify-between items-center mb-6">
 
-  <div>
+      <div>
 
-    <h1 className="text-4xl font-bold">
-      🎤 Painel do Operador
-    </h1>
+        <h1 className="text-4xl font-bold">
+          🎤 Painel do Operador
+        </h1>
 
-    {currentUser && (
+        {currentUser && (
 
-      <div className="mt-2 text-sm text-slate-600">
+          <div className="mt-2 text-sm text-slate-600">
 
-        <div>
+            <div>
 
-          {currentUser.role === "admin"
-            ? "👑 Administrador"
-            : `👤 ${currentUser.name}`}
+              {currentUser.role === "admin"
+                ? "👑 Administrador"
+                : `👤 ${currentUser.name}`}
 
-        </div>
+            </div>
 
-        {currentUser.role !== "admin" && (
+            {currentUser.role !== "admin" && (
 
-          <div>
+              <div>
 
-            Salas utilizadas:
-            {" "}
-            {rooms.length}
-            {" / "}
-            {currentUser.max_rooms}
+                Salas utilizadas:
+                {" "}
+                {rooms.length}
+                {" / "}
+                {currentUser.max_rooms}
+
+              </div>
+
+            )}
+
+            <div>
+              Status: {currentUser.status}
+            </div>
 
           </div>
 
         )}
 
-        <div>
-          Status: {currentUser.status}
-        </div>
-
       </div>
 
-    )}
+      <button
+        onClick={() => {
 
-  </div>
+          localStorage.removeItem(
+            "user"
+          );
 
-  <button
-    onClick={() => {
+          window.location.href =
+            "/auth/login";
 
-      localStorage.removeItem(
-        "user"
-      );
+        }}
+        className="bg-red-600 text-white px-4 py-2 rounded"
+      >
+        🚪 Sair
+      </button>
 
-      window.location.href =
-        "/auth/login";
-
-    }}
-    className="bg-red-600 text-white px-4 py-2 rounded"
-  >
-    🚪 Sair
-  </button>
-
-</div>
+    </div>
 
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <label className="block font-bold mb-2">
