@@ -19,9 +19,36 @@ export default function Dashboard() {
     loadRooms();
   }, []);
 
+  async function loadRooms() {
+
   const user = JSON.parse(
-  localStorage.getItem("user") || "{}"
-);
+    localStorage.getItem("user") || "{}"
+  );
+
+  let query = supabase
+    .from("rooms")
+    .select("*");
+
+  if (
+    user.role &&
+    user.role !== "admin"
+  ) {
+    query = query.eq(
+      "owner_id",
+      user.id
+    );
+  }
+
+  const { data } =
+    await query.order(
+      "created_at",
+      {
+        ascending: false,
+      }
+    );
+
+  setRooms(data || []);
+}
 
 let query = supabase
   .from("rooms")
