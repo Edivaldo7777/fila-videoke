@@ -14,10 +14,28 @@ export default function Dashboard() {
   const [roomCode, setRoomCode] = useState("");
   const [roomName, setRoomName] = useState("");
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [checkingLogin, setCheckingLogin] =
+    useState(true);
 
   useEffect(() => {
-    loadRooms();
-  }, []);
+
+  const user = JSON.parse(
+    localStorage.getItem("user") || "null"
+  );
+
+  if (!user) {
+
+    window.location.href =
+      "/auth/login";
+
+    return;
+  }
+
+  loadRooms();
+
+  setCheckingLogin(false);
+
+}, []);
 
 async function loadRooms() {
 
@@ -244,6 +262,14 @@ async function loadRooms() {
       ? `http://localhost:3000/room/${roomCode}`
       : "";
 
+  if (checkingLogin) {
+  return (
+    <main className="min-h-screen flex items-center justify-center">
+      Verificando login...
+    </main>
+  );
+}
+  
   return (
     <main className="min-h-screen bg-slate-100 p-8">
       <h1 className="text-4xl font-bold mb-6">
