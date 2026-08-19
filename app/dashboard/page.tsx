@@ -19,13 +19,28 @@ export default function Dashboard() {
     loadRooms();
   }, []);
 
-  async function loadRooms() {
-    const { data } = await supabase
-      .from("rooms")
-      .select("*")
-      .order("created_at", {
-        ascending: false,
-      });
+  const user = JSON.parse(
+  localStorage.getItem("user") || "{}"
+);
+
+let query = supabase
+  .from("rooms")
+  .select("*");
+
+if (user.role !== "admin") {
+  query = query.eq(
+    "owner_id",
+    user.id
+  );
+}
+
+const { data } =
+  await query.order(
+    "created_at",
+    {
+      ascending: false,
+    }
+  );
 
     setRooms(data || []);
   }
@@ -102,12 +117,17 @@ export default function Dashboard() {
       .toString(36)
       .substring(2, 8)
       .toUpperCase();
+    
+    const user = JSON.parse(
+      localStorage.getItem("user") || "{}"
+    );
 
     const { error } = await supabase
       .from("rooms")
       .insert({
         room_code: code,
         room_name: roomName,
+        owner_id: user.id,
       });
 
     if (error) {
