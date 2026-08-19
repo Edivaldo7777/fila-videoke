@@ -296,7 +296,14 @@ export default function RoomPage({
                   🎵 {item.song_name}
                 </span>
 
-              
+                <button
+                  onClick={() =>
+                    removeItem(item.id)
+                  }
+                  className="bg-red-500 px-3 py-2 rounded"
+                >
+                  Remover
+                </button>
 
               </li>
             ))}
