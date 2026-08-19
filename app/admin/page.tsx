@@ -98,16 +98,24 @@ export default function AdminPage() {
             </div>
 
             <div className="mt-2">
-              Role: {user.role}
-            </div>
+  Email: {user.email}
+</div>
 
-            <div>
-              Status: {user.status}
-            </div>
+<div>
+  Role: {user.role}
+</div>
 
-            <div>
-              Salas: {user.max_rooms}
-            </div>
+<div>
+  Status: {user.status}
+</div>
+
+<div>
+  Plano: {user.plan_name || "Básico"}
+</div>
+
+<div>
+  Limite de salas: {user.max_rooms}
+</div>
 
             <div className="flex flex-wrap gap-2 mt-4">
 
