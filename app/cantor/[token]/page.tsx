@@ -14,6 +14,8 @@ export default function CantorPage({
   const [roomCode, setRoomCode] = useState("");
 
   const [nextSong, setNextSong] = useState("");
+  const [nextSongLoaded, setNextSongLoaded] =
+    useState(false);
   const [message, setMessage] = useState("");
 
   const [position, setPosition] =
@@ -36,8 +38,15 @@ export default function CantorPage({
     if (!data) return;
 
     setSingerName(data.singer_name);
-    setRoomCode(data.room_code);
-    setNextSong(data.next_song || "");
+setRoomCode(data.room_code);
+
+if (!nextSongLoaded) {
+  setNextSong(
+    data.next_song || ""
+  );
+
+  setNextSongLoaded(true);
+}
 
     const { data: queueData } = await supabase
       .from("queue")
