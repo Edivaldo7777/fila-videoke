@@ -11,6 +11,24 @@ export default function AdminPage() {
 
   const [users, setUsers] =
     useState<any[]>([]);
+  
+  const approvedUsers =
+  users.filter(
+    (user) =>
+      user.status === "approved"
+  ).length;
+
+const pendingUsers =
+  users.filter(
+    (user) =>
+      user.status === "pending"
+  ).length;
+
+const blockedUsers =
+  users.filter(
+    (user) =>
+      user.status === "blocked"
+  ).length;
 
   useEffect(() => {
     loadUsers();
@@ -77,8 +95,48 @@ export default function AdminPage() {
     <main className="min-h-screen bg-slate-100 p-8">
 
       <h1 className="text-4xl font-black mb-8">
-        👑 Painel Master
-      </h1>
+  👑 Painel Master
+</h1>
+
+<div className="grid md:grid-cols-4 gap-4 mb-8">
+
+  <div className="bg-white p-4 rounded-xl shadow">
+    <div className="text-sm text-slate-500">
+      Clientes
+    </div>
+    <div className="text-3xl font-black">
+      {users.length}
+    </div>
+  </div>
+
+  <div className="bg-green-100 p-4 rounded-xl shadow">
+    <div className="text-sm">
+      ✅ Aprovados
+    </div>
+    <div className="text-3xl font-black">
+      {approvedUsers}
+    </div>
+  </div>
+
+  <div className="bg-yellow-100 p-4 rounded-xl shadow">
+    <div className="text-sm">
+      ⏳ Pendentes
+    </div>
+    <div className="text-3xl font-black">
+      {pendingUsers}
+    </div>
+  </div>
+
+  <div className="bg-red-100 p-4 rounded-xl shadow">
+    <div className="text-sm">
+      ⛔ Bloqueados
+    </div>
+    <div className="text-3xl font-black">
+      {blockedUsers}
+    </div>
+  </div>
+
+</div>
 
       <div className="space-y-4">
 
