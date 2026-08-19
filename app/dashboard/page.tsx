@@ -381,6 +381,17 @@ async function loadRooms() {
                   >
                     📺 TV
                   </button>
+                  <button
+                  onClick={() =>
+                      deleteRoom(
+                        room.room_code
+                      )
+                  }
+                  className="bg-red-700 text-white px-3 py-2 rounded"
+                  >
+                🗑 Excluir Sala
+                </button>  
+                    
                 </div>
               </div>
             ))}
