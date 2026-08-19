@@ -39,6 +39,19 @@ async function loadRooms() {
     );
   }
 
+  const { data, error } =
+    await query.order(
+      "created_at",
+      {
+        ascending: false,
+      }
+    );
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
   setRooms(data || []);
 }
 
