@@ -178,80 +178,23 @@ async function loadRooms() {
   roomCode: string
 ) {
 
-  const confirmed = confirm(
-    "Tem certeza que deseja excluir esta sala?"
+  console.log(
+    "ROOM CODE RECEBIDO:",
+    roomCode
   );
 
-  if (!confirmed) return;
-
-  const queueResult =
+  const { data: roomBefore } =
     await supabase
-      .from("queue")
-      .delete()
+      .from("rooms")
+      .select("*")
       .eq(
         "room_code",
         roomCode
       );
 
   console.log(
-    "QUEUE:",
-    queueResult
-  );
-
-  const currentResult =
-    await supabase
-      .from("current_singer")
-      .delete()
-      .eq(
-        "room_code",
-        roomCode
-      );
-
-  console.log(
-    "CURRENT:",
-    currentResult
-  );
-
-  const performanceResult =
-    await supabase
-      .from("performances")
-      .delete()
-      .eq(
-        "room_code",
-        roomCode
-      );
-
-  console.log(
-    "PERFORMANCES:",
-    performanceResult
-  );
-
-  const eventResult =
-    await supabase
-      .from("event_status")
-      .delete()
-      .eq(
-        "room_code",
-        roomCode
-      );
-
-  console.log(
-    "EVENT_STATUS:",
-    eventResult
-  );
-
-  const hallResult =
-    await supabase
-      .from("hall_of_fame")
-      .delete()
-      .eq(
-        "room_code",
-        roomCode
-      );
-
-  console.log(
-    "HALL_OF_FAME:",
-    hallResult
+    "ROOM BEFORE:",
+    roomBefore
   );
 
   const roomResult =
@@ -267,10 +210,6 @@ async function loadRooms() {
   console.log(
     "ROOM RESULT:",
     roomResult
-  );
-
-  alert(
-    "Verifique o Console (F12)"
   );
 
   loadRooms();
