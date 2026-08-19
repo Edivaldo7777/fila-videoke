@@ -95,6 +95,7 @@ export default function TvPage({
       setCheckingAccess(false);
       return;
     }
+    setCheckingAccess(false);
 
     if (
   user.role === "admin" ||
