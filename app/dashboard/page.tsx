@@ -42,9 +42,6 @@ const { data } =
     }
   );
 
-    setRooms(data || []);
-  }
-
   async function startNewEvent(
   roomCode: string
 ) {
