@@ -118,38 +118,61 @@ async function loadRooms() {
 }
 
   async function createRoom() {
-    if (!roomName.trim()) {
-      alert("Informe o nome da sala");
-      return;
-    }
 
-    const code = Math.random()
-      .toString(36)
-      .substring(2, 8)
-      .toUpperCase();
-    
-    const user = JSON.parse(
-      localStorage.getItem("user") || "{}"
+  if (!roomName.trim()) {
+    alert("Informe o nome da sala");
+    return;
+  }
+
+  const user = JSON.parse(
+    localStorage.getItem("user") || "{}"
+  );
+
+  const { count } = await supabase
+    .from("rooms")
+    .select("*", {
+      count: "exact",
+      head: true,
+    })
+    .eq(
+      "owner_id",
+      user.id
     );
 
-    const { error } = await supabase
-      .from("rooms")
-      .insert({
-        room_code: code,
-        room_name: roomName,
-        owner_id: user.id,
-      });
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    setRoomCode(code);
-    setRoomName("");
-
-    loadRooms();
+  if (
+    user.role !== "admin" &&
+    count !== null &&
+    count >= user.max_rooms
+  ) {
+    alert(
+      `Limite de ${user.max_rooms} sala(s) atingido.`
+    );
+    return;
   }
+
+  const code = Math.random()
+    .toString(36)
+    .substring(2, 8)
+    .toUpperCase();
+
+  const { error } = await supabase
+    .from("rooms")
+    .insert({
+      room_code: code,
+      room_name: roomName,
+      owner_id: user.id,
+    });
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  setRoomCode(code);
+  setRoomName("");
+
+  loadRooms();
+}
 
   const roomUrl =
     roomCode !== ""
