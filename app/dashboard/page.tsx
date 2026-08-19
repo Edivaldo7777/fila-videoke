@@ -25,19 +25,6 @@ export default function Dashboard() {
     localStorage.getItem("user") || "{}"
   );
 
-  let query = supabase
-    .from("rooms")
-    .select("*");
-
-  if (
-    user.role &&
-    user.role !== "admin"
-  ) {
-    query = query.eq(
-      "owner_id",
-      user.id
-    );
-  }
 
   const { data } =
     await query.order(
