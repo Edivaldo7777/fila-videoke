@@ -36,19 +36,55 @@ const blockedUsers =
 
   async function loadUsers() {
 
-    const { data } =
-      await supabase
-        .from("users")
-        .select("*")
-        .order(
-          "created_at",
-          {
-            ascending: false,
-          }
-        );
+  const { data: usersData } =
+    await supabase
+      .from("users")
+      .select("*")
+      .order(
+        "created_at",
+        {
+          ascending: false,
+        }
+      );
 
-    setUsers(data || []);
+  if (!usersData) {
+    setUsers([]);
+    return;
   }
+
+  const usersWithRooms =
+    await Promise.all(
+
+      usersData.map(
+        async (user) => {
+
+          const { count } =
+            await supabase
+              .from("rooms")
+              .select("*", {
+                count: "exact",
+                head: true,
+              })
+              .eq(
+                "owner_id",
+                user.id
+              );
+
+          return {
+            ...user,
+            rooms_used:
+              count || 0,
+          };
+
+        }
+      )
+
+    );
+
+  setUsers(
+    usersWithRooms
+  );
+}
 
   async function approveUser(
     id: string
@@ -173,6 +209,14 @@ const blockedUsers =
 
 <div>
   Limite de salas: {user.max_rooms}
+</div>
+
+<div>
+  Salas utilizadas:
+  {" "}
+  {user.rooms_used || 0}
+  {" / "}
+  {user.max_rooms}
 </div>
 
             <div className="flex flex-wrap gap-2 mt-4">
