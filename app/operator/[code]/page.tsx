@@ -19,6 +19,12 @@ export default function OperatorPage({
   const [roomName, setRoomName] = useState("");
   const [queue, setQueue] = useState<QueueItem[]>([]);
 
+  const [authorized, setAuthorized] =
+    useState(false);
+
+  const [checkingAccess, setCheckingAccess] =
+    useState(true);
+
   const [newSinger, setNewSinger] = useState("");
   const [newSong, setNewSong] = useState("");
 
@@ -40,16 +46,43 @@ export default function OperatorPage({
   }, [params]);
 
   useEffect(() => {
-    if (!roomCode) return;
 
-    loadData();
+  if (!roomCode) return;
 
-    const timer = setInterval(() => {
-      loadData();
-    }, 5000);
+  async function validateAccess() {
 
-    return () => clearInterval(timer);
-  }, [roomCode]);
+    const user = JSON.parse(
+      localStorage.getItem("user") || "{}"
+    );
+
+    const { data: room } =
+      await supabase
+        .from("rooms")
+        .select("*")
+        .eq(
+          "room_code",
+          roomCode
+        )
+        .single();
+
+    if (!room) {
+      setCheckingAccess(false);
+      return;
+    }
+
+    if (
+      user.role === "admin" ||
+      room.owner_id === user.id
+    ) {
+      setAuthorized(true);
+    }
+
+    setCheckingAccess(false);
+  }
+
+  validateAccess();
+
+}, [roomCode]);
 
   async function loadData() {
     const { data: queueData } =
@@ -617,6 +650,30 @@ if (roomStatusError) {
 
   const estimatedMinutes =
     queue.length * 5;
+  
+  if (checkingAccess) {
+  return (
+    <main className="min-h-screen flex items-center justify-center">
+      Verificando acesso...
+    </main>
+  );
+}
+
+if (!authorized) {
+  return (
+    <main className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold mb-4">
+          🔒 Acesso Negado
+        </h1>
+
+        <p>
+          Você não é proprietário desta sala.
+        </p>
+      </div>
+    </main>
+  );
+}
 
   return (
     <main className="min-h-screen bg-slate-950 text-white p-8">
