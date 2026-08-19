@@ -150,54 +150,72 @@ if (current?.singer_token) {
   );
 }
   async function addSinger() {
-    if (
-      !newSinger.trim() ||
-      !newSong.trim()
-    ) {
-      alert(
-        "Informe o nome do cantor e a música."
-      );
-      return;
-    }
 
-    const token =
-      crypto.randomUUID();
-
-    await supabase
-      .from("singer_profile")
-      .insert({
-        singer_token: token,
-        singer_name: newSinger,
-        room_code: roomCode,
-        next_song:
-          "Escolherá na hora de cantar",
-      });
-
-    await supabase
-      .from("queue")
-      .insert({
-        room_code: roomCode,
-        singer_name: newSinger,
-        song_name: newSong,
-        singer_token: token,
-      });
-
-    setNewSinger("");
-    setNewSong("");
-
-    loadData();
+  if (!authorized) {
+    alert("Acesso negado.");
+    return;
   }
+
+  if (
+    !newSinger.trim() ||
+    !newSong.trim()
+  ) {
+    alert(
+      "Informe o nome do cantor e a música."
+    );
+    return;
+  }
+
+  const token =
+    crypto.randomUUID();
+
+  await supabase
+    .from("singer_profile")
+    .insert({
+      singer_token: token,
+      singer_name: newSinger,
+      room_code: roomCode,
+      next_song:
+        "Escolherá na hora de cantar",
+    });
+
+  await supabase
+    .from("queue")
+    .insert({
+      room_code: roomCode,
+      singer_name: newSinger,
+      song_name: newSong,
+      singer_token: token,
+    });
+
+  setNewSinger("");
+  setNewSong("");
+
+  loadData();
+}
+
 
   async function removeItem(id: number) {
-    await supabase
-      .from("queue")
-      .delete()
-      .eq("id", id);
 
-    loadData();
+  if (!authorized) {
+    alert("Acesso negado.");
+    return;
   }
 
+  await supabase
+    .from("queue")
+    .delete()
+    .eq("id", id);
+
+  loadData();
+}
+
   async function nextSinger() {
+    if (!authorized) {
+       alert("Acesso negado.");
+    return;
+    }
+
     if (queue.length === 0) return;
 
     const singer = queue[0];
@@ -288,6 +306,11 @@ if (performanceError) {
   }
 
   async function clearQueue() {
+
+    if (!authorized) {
+       alert("Acesso negado.");
+    return;
+    }
     const confirmed = confirm(
       "Tem certeza que deseja limpar toda a fila?"
     );
@@ -303,6 +326,11 @@ if (performanceError) {
   }
 
   async function endEvent() {
+
+    if (!authorized) {
+        alert("Acesso negado.");
+    return;
+    }
   const confirmed = confirm(
     "Tem certeza que deseja encerrar o evento?"
   );
