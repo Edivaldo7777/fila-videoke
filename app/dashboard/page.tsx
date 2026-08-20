@@ -199,26 +199,6 @@ async function loadRooms() {
   async function deleteRoom(
   roomCode: string
 ) {
-  async function changePassword() {
-
-  const currentPassword =
-    prompt(
-      "Digite sua senha atual:"
-    );
-
-  if (!currentPassword) {
-    return;
-  }
-
-  if (
-    currentPassword !==
-    currentUser.password
-  ) {
-    alert(
-      "Senha atual incorreta."
-    );
-    return;
-  }
 
   const newPassword =
     prompt(
@@ -332,7 +312,79 @@ async function loadRooms() {
 
   loadRooms();
 }
+async function changePassword() {
 
+  const currentPassword =
+    prompt(
+      "Digite sua senha atual:"
+    );
+
+  if (!currentPassword) {
+    return;
+  }
+
+  if (
+    currentPassword !==
+    currentUser.password
+  ) {
+    alert(
+      "Senha atual incorreta."
+    );
+    return;
+  }
+
+  const newPassword =
+    prompt(
+      "Digite sua nova senha:"
+    );
+
+  if (!newPassword) {
+    return;
+  }
+
+  const confirmPassword =
+    prompt(
+      "Confirme a nova senha:"
+    );
+
+  if (
+    newPassword !==
+    confirmPassword
+  ) {
+    alert(
+      "As senhas não conferem."
+    );
+    return;
+  }
+
+  await supabase
+    .from("users")
+    .update({
+      password: newPassword,
+    })
+    .eq(
+      "id",
+      currentUser.id
+    );
+
+  const updatedUser = {
+    ...currentUser,
+    password: newPassword,
+  };
+
+  localStorage.setItem(
+    "user",
+    JSON.stringify(updatedUser)
+  );
+
+  setCurrentUser(
+    updatedUser
+  );
+
+  alert(
+    "Senha alterada com sucesso."
+  );
+}
   const roomUrl =
     roomCode !== ""
       ? `http://localhost:3000/room/${roomCode}`
