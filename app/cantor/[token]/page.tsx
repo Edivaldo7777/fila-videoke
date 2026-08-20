@@ -12,7 +12,8 @@ export default function CantorPage({
 
   const [singerName, setSingerName] = useState("");
   const [roomCode, setRoomCode] = useState("");
-
+  const [eventMode, setEventMode] =
+    useState("traditional");
   const [nextSong, setNextSong] = useState("");
   
   const [message, setMessage] = useState("");
@@ -37,7 +38,24 @@ export default function CantorPage({
     if (!data) return;
 
     setSingerName(data.singer_name);
-setRoomCode(data.room_code);
+    setRoomCode(data.room_code);
+    
+    const { data: room } =
+  await supabase
+    .from("rooms")
+    .select("*")
+    .eq(
+      "room_code",
+      data.room_code
+    )
+    .single();
+
+if (room) {
+  setEventMode(
+    room.event_mode ||
+    "traditional"
+  );
+}
 
 setNextSong((currentValue) => {
 
@@ -110,6 +128,45 @@ setNextSong((currentValue) => {
 
     loadSinger();
   }
+  
+  async function becomeJuror() {
+
+  const confirmed = confirm(
+    "Você perderá sua posição na fila e passará a atuar como jurado. Deseja continuar?"
+  );
+
+  if (!confirmed) return;
+
+  const voterToken =
+    crypto.randomUUID();
+
+  await supabase
+    .from("voters")
+    .insert({
+      room_code: roomCode,
+      voter_token: voterToken,
+      voter_name: singerName,
+    });
+
+  await supabase
+    .from("queue")
+    .delete()
+    .eq(
+      "singer_token",
+      token
+    );
+
+  await supabase
+    .from("singer_profile")
+    .delete()
+    .eq(
+      "singer_token",
+      token
+    );
+
+  window.location.href =
+    `/jurado/${voterToken}`;
+}
 
   const singersAhead =
     position && position > 1
@@ -218,13 +275,41 @@ setNextSong((currentValue) => {
           placeholder="Digite a próxima música"
         />
 
-        <button
-          onClick={saveNextSong}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
-          Salvar
-        </button>
+        <div className="flex gap-3 flex-wrap">
 
+  <button
+    onClick={saveNextSong}
+    className="bg-blue-600 text-white px-4 py-2 rounded"
+  >
+    Salvar
+  </button>
+
+  {eventMode === "interactive" && (
+
+    <button
+      onClick={becomeJuror}
+      className="bg-yellow-500 text-black px-4 py-2 rounded"
+    >
+      ⭐ Virar Jurado
+    </button>
+
+  )}
+
+</div>
+        {eventMode === "interactive" && (
+
+  <button
+    className="bg-yellow-500 text-black px-4 py-2 rounded ml-3"
+    onClick={() =>
+      alert(
+        "Próxima etapa: virar jurado."
+      )
+    }
+  >
+    ⭐ Virar Jurado
+  </button>
+
+)}
         {message && (
           <p className="mt-4 text-green-600 font-bold">
             {message}
