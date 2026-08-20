@@ -115,7 +115,33 @@ const blockedUsers =
   async function updateRooms(
     id: string,
     maxRooms: number
-  ) {
+  ) 
+  async function updatePlan(
+  id: string,
+  plan: string
+) {
+
+  let maxRooms = 1;
+
+  if (plan === "Pro") {
+    maxRooms = 3;
+  }
+
+  if (plan === "Premium") {
+    maxRooms = 10;
+  }
+
+  await supabase
+    .from("users")
+    .update({
+      plan_name: plan,
+      max_rooms: maxRooms,
+    })
+    .eq("id", id);
+
+  loadUsers();
+}
+  {
 
     await supabase
       .from("users")
@@ -240,29 +266,40 @@ const blockedUsers =
               </button>
 
               <button
-                onClick={() => {
+  onClick={() =>
+    updatePlan(
+      user.id,
+      "Básico"
+    )
+  }
+  className="bg-green-600 text-white px-4 py-2 rounded"
+>
+  🟢 Básico
+</button>
 
-                  const value =
-                    prompt(
-                      "Quantidade de salas:",
-                      String(
-                        user.max_rooms
-                      )
-                    );
+<button
+  onClick={() =>
+    updatePlan(
+      user.id,
+      "Pro"
+    )
+  }
+  className="bg-yellow-600 text-white px-4 py-2 rounded"
+>
+  🟡 Pro
+</button>
 
-                  if (!value)
-                    return;
-
-                  updateRooms(
-                    user.id,
-                    Number(value)
-                  );
-
-                }}
-                className="bg-blue-600 text-white px-4 py-2 rounded"
-              >
-                🏢 Definir Salas
-              </button>
+<button
+  onClick={() =>
+    updatePlan(
+      user.id,
+      "Premium"
+    )
+  }
+  className="bg-blue-600 text-white px-4 py-2 rounded"
+>
+  🔵 Premium
+</button>
 
             </div>
 
