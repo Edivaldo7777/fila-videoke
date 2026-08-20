@@ -157,6 +157,7 @@ async function updatePlan(
 async function resetPassword(
   id: string
 ) {
+  
 
   const newPassword =
     prompt(
@@ -176,6 +177,95 @@ async function resetPassword(
 
   alert(
     "Senha alterada com sucesso."
+  );
+
+  loadUsers();
+}
+  async function deleteUser(
+  user: any
+) {
+
+  const confirmed = confirm(
+    `Excluir ${user.name}?`
+  );
+
+  if (!confirmed) return;
+
+  const { data: rooms } =
+    await supabase
+      .from("rooms")
+      .select("*")
+      .eq(
+        "owner_id",
+        user.id
+      );
+
+  if (rooms) {
+
+    for (const room of rooms) {
+
+      await supabase
+        .from("queue")
+        .delete()
+        .eq(
+          "room_code",
+          room.room_code
+        );
+
+      await supabase
+        .from("current_singer")
+        .delete()
+        .eq(
+          "room_code",
+          room.room_code
+        );
+
+      await supabase
+        .from("performances")
+        .delete()
+        .eq(
+          "room_code",
+          room.room_code
+        );
+
+      await supabase
+        .from("event_status")
+        .delete()
+        .eq(
+          "room_code",
+          room.room_code
+        );
+
+      await supabase
+        .from("hall_of_fame")
+        .delete()
+        .eq(
+          "room_code",
+          room.room_code
+        );
+
+      await supabase
+        .from("rooms")
+        .delete()
+        .eq(
+          "room_code",
+          room.room_code
+        );
+
+    }
+
+  }
+
+  await supabase
+    .from("users")
+    .delete()
+    .eq(
+      "id",
+      user.id
+    );
+
+  alert(
+    "Cliente removido com sucesso."
   );
 
   loadUsers();
@@ -336,6 +426,14 @@ async function resetPassword(
   className="bg-purple-600 text-white px-4 py-2 rounded"
 >
   🔑 Resetar Senha
+</button>
+<button
+  onClick={() =>
+    deleteUser(user)
+  }
+  className="bg-red-800 text-white px-4 py-2 rounded"
+>
+  🗑 Excluir Cliente
 </button>
             </div>
 
