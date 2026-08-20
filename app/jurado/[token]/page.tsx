@@ -25,6 +25,9 @@ export default function JuradoPage({
 
   const [message, setMessage] =
     useState("");
+  
+  const [eventMode, setEventMode] =
+    useState("traditional");
 
   useEffect(() => {
     async function init() {
@@ -43,9 +46,32 @@ export default function JuradoPage({
           .single();
 
       if (voter) {
-        setRoomCode(voter.room_code);
-        setVoterName(voter.voter_name);
-      }
+
+  setRoomCode(
+    voter.room_code
+  );
+
+  setVoterName(
+    voter.voter_name
+  );
+
+  const { data: room } =
+    await supabase
+      .from("rooms")
+      .select("*")
+      .eq(
+        "room_code",
+        voter.room_code
+      )
+      .single();
+
+  if (room) {
+    setEventMode(
+      room.event_mode ||
+      "traditional"
+    );
+  }
+}
     }
 
     init();
@@ -157,7 +183,50 @@ export default function JuradoPage({
       );
     }
   }
+  async function becomeSinger() {
 
+  const confirmed = confirm(
+    "Você será colocado no final da fila. Deseja continuar?"
+  );
+
+  if (!confirmed) return;
+
+  const token =
+    crypto.randomUUID();
+
+  await supabase
+    .from("singer_profile")
+    .insert({
+      singer_token: token,
+      singer_name: voterName,
+      room_code: roomCode,
+      participant_type:
+        "singer",
+      next_song:
+        "Escolherá na hora de cantar",
+    });
+
+  await supabase
+    .from("queue")
+    .insert({
+      room_code: roomCode,
+      singer_name: voterName,
+      song_name:
+        "Escolherá na hora de cantar",
+      singer_token: token,
+    });
+
+  await supabase
+    .from("voters")
+    .delete()
+    .eq(
+      "voter_token",
+      voterToken
+    );
+
+  window.location.href =
+    `/cantor/${token}`;
+}
   return (
     <main className="min-h-screen bg-slate-950 text-white p-8">
 
@@ -230,7 +299,16 @@ export default function JuradoPage({
           >
             Enviar Voto
           </button>
+          {eventMode === "interactive" && (
 
+  <button
+    onClick={becomeSinger}
+    className="bg-blue-600 hover:bg-blue-700 px-5 py-3 rounded ml-3"
+  >
+    🎤 Quero Cantar
+  </button>
+
+)}
           {message && (
             <div className="mt-4 font-bold text-yellow-300">
               {message}
