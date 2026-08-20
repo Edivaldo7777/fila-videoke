@@ -113,15 +113,7 @@ export default function LoginPage() {
 
           <br />
 
-          <button
-            onClick={() =>
-              window.location.href =
-                "/auth/forgot-password"
-            }
-            className="text-purple-600 font-bold"
-          >
-            🔑 Esqueci minha senha
-          </button>
+      
 
         </div>
 
