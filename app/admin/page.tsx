@@ -100,23 +100,35 @@ const blockedUsers =
   }
 
   async function blockUser(
-    id: string
-  ) {
-    await supabase
-      .from("users")
-      .update({
-        status: "blocked",
-      })
-      .eq("id", id);
+  id: string
+) {
 
-    loadUsers();
-  }
+  await supabase
+    .from("users")
+    .update({
+      status: "blocked",
+    })
+    .eq("id", id);
 
-  async function updateRooms(
-    id: string,
-    maxRooms: number
-  ) 
-  async function updatePlan(
+  loadUsers();
+}
+
+async function updateRooms(
+  id: string,
+  maxRooms: number
+) {
+
+  await supabase
+    .from("users")
+    .update({
+      max_rooms: maxRooms,
+    })
+    .eq("id", id);
+
+  loadUsers();
+}
+
+async function updatePlan(
   id: string,
   plan: string
 ) {
@@ -141,17 +153,6 @@ const blockedUsers =
 
   loadUsers();
 }
-  {
-
-    await supabase
-      .from("users")
-      .update({
-        max_rooms: maxRooms,
-      })
-      .eq("id", id);
-
-    loadUsers();
-  }
 
   return (
     <main className="min-h-screen bg-slate-100 p-8">
