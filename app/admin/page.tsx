@@ -270,6 +270,21 @@ async function resetPassword(
 
   loadUsers();
 }
+<button
+    onClick={() => {
+
+      localStorage.removeItem(
+        "user"
+      );
+
+      window.location.href =
+        "/auth/login";
+
+    }}
+    className="bg-red-600 text-white px-4 py-2 rounded"
+  >
+    🚪 Sair
+  </button>
   return (
     <main className="min-h-screen bg-slate-100 p-8">
 
