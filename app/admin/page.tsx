@@ -154,6 +154,32 @@ async function updatePlan(
   loadUsers();
 }
 
+async function resetPassword(
+  id: string
+) {
+
+  const newPassword =
+    prompt(
+      "Digite a nova senha:"
+    );
+
+  if (!newPassword) {
+    return;
+  }
+
+  await supabase
+    .from("users")
+    .update({
+      password: newPassword,
+    })
+    .eq("id", id);
+
+  alert(
+    "Senha alterada com sucesso."
+  );
+
+  loadUsers();
+}
   return (
     <main className="min-h-screen bg-slate-100 p-8">
 
@@ -301,7 +327,16 @@ async function updatePlan(
 >
   🔵 Premium
 </button>
-
+<button
+  onClick={() =>
+    resetPassword(
+      user.id
+    )
+  }
+  className="bg-purple-600 text-white px-4 py-2 rounded"
+>
+  🔑 Resetar Senha
+</button>
             </div>
 
           </div>
