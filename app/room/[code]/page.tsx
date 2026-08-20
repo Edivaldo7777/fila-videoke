@@ -25,12 +25,37 @@ export default function RoomPage({
   const [mode, setMode] = useState<
     "singer" | "voter" | null
   >(null);
+  
+  const [eventMode, setEventMode] =
+     useState("traditional");
 
   useEffect(() => {
+
     async function init() {
-      const room = await params;
-      setRoomCode(room.code);
-    }
+
+  const room = await params;
+
+  setRoomCode(
+    room.code
+  );
+
+  const { data } =
+    await supabase
+      .from("rooms")
+      .select("*")
+      .eq(
+        "room_code",
+        room.code
+      )
+      .single();
+
+  if (data) {
+    setEventMode(
+      data.event_mode ||
+      "traditional"
+    );
+  }
+}
 
     init();
   }, [params]);
