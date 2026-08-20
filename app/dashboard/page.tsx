@@ -13,6 +13,8 @@ type Room = {
 export default function Dashboard() {
   const [roomCode, setRoomCode] = useState("");
   const [roomName, setRoomName] = useState("");
+  const [eventMode, setEventMode] =
+    useState("traditional");
   const [rooms, setRooms] = useState<Room[]>([]);
   const [currentUser, setCurrentUser] =
     useState<any>(null);
@@ -183,6 +185,7 @@ async function loadRooms() {
       room_code: code,
       room_name: roomName,
       owner_id: user.id,
+      event_mode: eventMode,
     });
 
   if (error) {
@@ -428,7 +431,33 @@ async function changePassword() {
         <label className="block font-bold mb-2">
           Nome da Sala
         </label>
+      <div className="mb-4">
 
+  <label className="block font-bold mb-2">
+    Modo do Evento
+  </label>
+
+  <select
+    value={eventMode}
+    onChange={(e) =>
+      setEventMode(
+        e.target.value
+      )
+    }
+    className="border rounded p-2 w-full"
+  >
+
+    <option value="traditional">
+      🎤 Tradicional
+    </option>
+
+    <option value="interactive">
+      ⭐ Interativo
+    </option>
+
+  </select>
+
+</div>
         <input
           type="text"
           value={roomName}
