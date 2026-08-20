@@ -199,7 +199,79 @@ async function loadRooms() {
   async function deleteRoom(
   roomCode: string
 ) {
+  async function changePassword() {
 
+  const currentPassword =
+    prompt(
+      "Digite sua senha atual:"
+    );
+
+  if (!currentPassword) {
+    return;
+  }
+
+  if (
+    currentPassword !==
+    currentUser.password
+  ) {
+    alert(
+      "Senha atual incorreta."
+    );
+    return;
+  }
+
+  const newPassword =
+    prompt(
+      "Digite sua nova senha:"
+    );
+
+  if (!newPassword) {
+    return;
+  }
+
+  const confirmPassword =
+    prompt(
+      "Confirme a nova senha:"
+    );
+
+  if (
+    newPassword !==
+    confirmPassword
+  ) {
+    alert(
+      "As senhas não conferem."
+    );
+    return;
+  }
+
+  await supabase
+    .from("users")
+    .update({
+      password: newPassword,
+    })
+    .eq(
+      "id",
+      currentUser.id
+    );
+
+  const updatedUser = {
+    ...currentUser,
+    password: newPassword,
+  };
+
+  localStorage.setItem(
+    "user",
+    JSON.stringify(updatedUser)
+  );
+
+  setCurrentUser(
+    updatedUser
+  );
+
+  alert(
+    "Senha alterada com sucesso."
+  );
+}
   const confirmed = confirm(
     "Tem certeza que deseja excluir esta sala?"
   );
@@ -321,21 +393,32 @@ async function loadRooms() {
 
       </div>
 
-      <button
-        onClick={() => {
+      <div className="flex gap-2">
 
-          localStorage.removeItem(
-            "user"
-          );
+  <button
+    onClick={changePassword}
+    className="bg-blue-600 text-white px-4 py-2 rounded" 
+    >
+    🔒 Alterar Senha
+  </button>
 
-          window.location.href =
-            "/auth/login";
+  <button
+    onClick={() => {
 
-        }}
-        className="bg-red-600 text-white px-4 py-2 rounded"
-      >
-        🚪 Sair
-      </button>
+      localStorage.removeItem(
+        "user"
+      );
+
+      window.location.href =
+        "/auth/login";
+
+    }}
+    className="bg-red-600 text-white px-4 py-2 rounded"
+  >
+    🚪 Sair
+  </button>
+
+</div>
 
     </div>
 
