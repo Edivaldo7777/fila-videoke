@@ -30,7 +30,7 @@ export default function Home() {
               className="text-sm font-semibold text-slate-300 hover:text-white transition-colors flex items-center gap-2 px-4 py-2 rounded-full hover:bg-white/5 border border-transparent hover:border-white/10"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
-              Acesso Restrito
+              🔐 Login Membros
             </button>
           </div>
         </header>
@@ -39,18 +39,18 @@ export default function Home() {
         <section className="max-w-7xl mx-auto px-6 py-24 md:py-32 text-center flex flex-col items-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-fuchsia-400 text-sm font-medium mb-8 animate-pulse">
             <span className="w-2 h-2 rounded-full bg-fuchsia-500"></span>
-            A revolução do entretenimento chegou
+            A plataforma completa para Karaokês, Bares e Eventos Musicais
           </div>
           
           <h2 className="text-5xl md:text-7xl font-black mb-6 leading-tight tracking-tight">
-            Chega de papelzinho. <br/>
+            Chega de filas desorganizadas.. <br/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-500 via-violet-500 to-cyan-400">
-              O palco do seu bar merece ser lendário.
+              Transforme seu Karaokê em uma Experiência Profissional.
             </span>
           </h2>
 
           <p className="text-xl md:text-2xl text-slate-400 mb-10 max-w-3xl leading-relaxed">
-            Acabe com a confusão, as reclamações e o amadorismo. Uma plataforma premium que transforma o Karaokê do seu estabelecimento em um verdadeiro espetáculo de tecnologia e vendas.
+            Controle filas automaticamente, acompanhe cantores em tempo real, utilize QR Code, exiba rankings, premie participantes e ofereça uma experiência moderna para seus clientes.
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4 w-full sm:w-auto">
@@ -82,9 +82,11 @@ export default function Home() {
                 </p>
                 <ul className="space-y-4">
                   {[
-                    "Aumento de 30% na retenção de clientes",
-                    "Redução total do atrito e estresse da equipe",
-                    "Aparência moderna, tecnológica e exclusiva"
+                    [
+                     "Fila organizada em tempo real",
+                     "Menos trabalho para a equipe",
+                     "Experiência moderna para seus clientes"
+                    ]
                   ].map((item, i) => (
                     <li key={i} className="flex items-center gap-3 text-slate-300">
                       <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">✓</div>
@@ -104,9 +106,9 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="bg-slate-800 rounded-lg p-4 mb-4 border border-fuchsia-500/30">
-                    <div className="text-sm text-slate-400">Mesa 12</div>
+                    <div className="text-sm text-slate-400">🎤 Cantando Agora</div>
                     <div className="text-2xl font-black text-white">João Silva</div>
-                    <div className="text-fuchsia-400">Evidências - Chitãozinho & Xororó</div>
+                    <div className="text-fuchsia-400">🎵 Evidências</div>
                   </div>
                   <div className="opacity-50">
                     <div className="text-sm font-semibold mb-2">Próximos:</div>
@@ -134,13 +136,37 @@ export default function Home() {
 
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { icon: "📱", title: "Autoatendimento via QR Code", desc: "O cliente escaneia o código na mesa, escolhe a música no próprio celular e entra na fila automaticamente. Menos trabalho para seus garçons." },
-              { icon: "📺", title: "TV de Retorno Profissional", desc: "Uma interface linda projetada nas TVs do bar, mostrando quem canta agora e os próximos, gerando expectativa e prendendo a atenção." },
-              { icon: "⭐", title: "Sistema de Jurados (Nova febre)", desc: "Gamifique a noite. Permita que o público da casa ou jurados escolhidos dêem notas. O bar todo participa do show." },
-              { icon: "🏆", title: "Ranking e Premiações", desc: "Placar ao vivo das melhores apresentações da noite. Perfeito para o bar sortear drinks e criar engajamento." },
-              { icon: "👑", title: "Hall da Fama", desc: "Mantenha o histórico dos 'Astros da Casa'. Fidelize os clientes que amam voltar para defender seu primeiro lugar." },
-              { icon: "⚡", title: "Controle Total do DJ", desc: "Pause, pule, adicione ou remova cantores com um toque. O poder total na mão do host do seu karaokê." },
-            ].map((feature, idx) => (
+  {
+    icon: "📱",
+    title: "QR Code para Participantes",
+    desc: "O cantor acessa pelo celular e entra rapidamente na fila."
+  },
+  {
+    icon: "📺",
+    title: "TV para o Público",
+    desc: "Exiba cantor atual, próximos participantes e classificação em tempo real."
+  },
+  {
+    icon: "⭐",
+    title: "Sistema de Jurados",
+    desc: "Permita avaliações e torne cada apresentação mais divertida e competitiva."
+  },
+  {
+    icon: "🏆",
+    title: "Ranking Automático",
+    desc: "O sistema calcula e exibe automaticamente os melhores participantes."
+  },
+  {
+    icon: "👑",
+    title: "Hall da Fama",
+    desc: "Registre campeões e destaque os melhores talentos do evento."
+  },
+  {
+    icon: "⚡",
+    title: "Controle Completo do Evento",
+    desc: "Adicione cantores, avance apresentações e gerencie tudo em tempo real."
+  }
+].map((feature, idx) => (
               <div key={idx} className="bg-white/5 border border-white/10 p-8 rounded-2xl hover:bg-white/10 transition-all hover:-translate-y-1 group">
                 <div className="text-4xl mb-6 group-hover:scale-110 transition-transform origin-left">{feature.icon}</div>
                 <h4 className="text-xl font-bold mb-3">{feature.title}</h4>
@@ -165,11 +191,13 @@ export default function Home() {
                 <div className="text-slate-400 font-bold tracking-widest uppercase text-sm mb-2">Iniciante</div>
                 <h4 className="text-3xl font-black mb-2">Básico</h4>
                 <p className="text-slate-400 mb-8 pb-8 border-b border-white/10">Para bares pequenos que querem começar a se organizar.</p>
-                <ul className="space-y-4 mb-8">
-                  <li className="flex items-center gap-3">✅ 1 Ambiente/Sala</li>
-                  <li className="flex items-center gap-3">✅ Fila via QR Code</li>
-                  <li className="flex items-center gap-3">✅ Tela de Apresentação</li>
-                </ul>
+                <ul className="space-y-4 mb-8 font-medium">
+                  <li>⭐ Até 3 Salas</li>
+                  <li>⭐ Sistema de Jurados</li>
+                  <li>⭐ Ranking Automático</li>
+                  <li>⭐ Hall da Fama</li>
+                  <li>⭐ Multiambiente</li>
+               </ul>
                 <button
                   onClick={() => window.location.href = "/auth/register"}
                   className="w-full py-4 rounded-xl font-bold bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
@@ -187,10 +215,11 @@ export default function Home() {
                 <h4 className="text-4xl font-black mb-2 text-white">Pro</h4>
                 <p className="text-slate-300 mb-8 pb-8 border-b border-white/10">O sistema que transforma seu bar na referência da cidade.</p>
                 <ul className="space-y-4 mb-8 font-medium">
-                  <li className="flex items-center gap-3 text-white">⭐ Até 3 Salas/Ambientes</li>
-                  <li className="flex items-center gap-3 text-white">⭐ Módulo de Jurados e Notas</li>
-                  <li className="flex items-center gap-3 text-white">⭐ Hall da Fama e Ranking</li>
-                  <li className="flex items-center gap-3 text-white">⭐ Personalização com sua Logo</li>
+                   <li>⭐ Até 3 Salas</li>
+                   <li>⭐ Sistema de Jurados</li>
+                   <li>⭐ Ranking Automático</li>
+                   <li>⭐ Hall da Fama</li>
+                   <li>⭐ Multiambiente</li>
                 </ul>
                 <button
                   onClick={() => window.location.href = "/auth/register"}
@@ -206,10 +235,18 @@ export default function Home() {
                 <h4 className="text-3xl font-black mb-2">Premium</h4>
                 <p className="text-slate-400 mb-8 pb-8 border-b border-white/10">Para mega operações, redes de bares ou estúdios profissionais.</p>
                 <ul className="space-y-4 mb-8">
-                  <li className="flex items-center gap-3">👑 Até 10 Salas Simultâneas</li>
-                  <li className="flex items-center gap-3">👑 Suporte Prioritário VIP</li>
-                  <li className="flex items-center gap-3">👑 Relatórios de Consumo/Fila</li>
-                </ul>
+2
+<li>👑 Até 10 Salas</li>
+3
+<li>👑 Todos os Recursos</li>
+4
+<li>👑 Multiambientes</li>
+5
+<li>👑 Operação Profissional</li>
+6
+<li>👑 Suporte Prioritário</li>
+7
+</ul>
                 <button
                   onClick={() => window.location.href = "/auth/register"}
                   className="w-full py-4 rounded-xl font-bold bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
@@ -232,7 +269,7 @@ export default function Home() {
               Pronto para ser a atração principal da noite?
             </h3>
             <p className="text-2xl mb-10 text-slate-200 font-light">
-              Leva menos de 3 minutos para configurar seu bar e imprimir seu primeiro QR Code. 
+              Crie sua conta, solicite aprovação e comece a organizar seus eventos com tecnologia profissional. 
             </p>
             <button
               onClick={() => window.location.href = "/auth/register"}
@@ -247,7 +284,7 @@ export default function Home() {
 
         {/* Footer Simples */}
         <footer className="bg-black py-8 border-t border-white/10 text-center text-slate-500 text-sm">
-          <p>© {new Date().getFullYear()} Fila Videokê. Elevando o padrão do entretenimento.</p>
+          <p>© {new Date().getFullYear()} Fila Videokê. A plataforma completa para Karaokês, Bares e Eventos Musicais.</p>
         </footer>
 
       </div>
