@@ -270,7 +270,13 @@ async function resetPassword(
 
   loadUsers();
 }
-<button
+
+  return (
+    <main className="min-h-screen bg-slate-100 p-8">
+
+      <h1 className="text-4xl font-black mb-8">
+  👑 Painel Master
+  <button
     onClick={() => {
 
       localStorage.removeItem(
@@ -285,11 +291,6 @@ async function resetPassword(
   >
     🚪 Sair
   </button>
-  return (
-    <main className="min-h-screen bg-slate-100 p-8">
-
-      <h1 className="text-4xl font-black mb-8">
-  👑 Painel Master
 </h1>
 
 <div className="grid md:grid-cols-4 gap-4 mb-8">
