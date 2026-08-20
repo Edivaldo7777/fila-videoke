@@ -99,6 +99,32 @@ export default function LoginPage() {
           Entrar
         </button>
 
+        <div className="mt-6 space-y-3 text-center">
+
+          <button
+            onClick={() =>
+              window.location.href =
+                "/auth/register"
+            }
+            className="text-blue-600 font-bold"
+          >
+            📝 Criar nova conta
+          </button>
+
+          <br />
+
+          <button
+            onClick={() =>
+              window.location.href =
+                "/auth/forgot-password"
+            }
+            className="text-purple-600 font-bold"
+          >
+            🔑 Esqueci minha senha
+          </button>
+
+        </div>
+
       </div>
 
     </main>
