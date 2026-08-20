@@ -78,8 +78,11 @@ export default function Home() {
               <div>
                 <h3 className="text-3xl font-bold mb-4">Seu cliente veio para cantar, não para passar raiva na fila.</h3>
                 <p className="text-slate-400 mb-6 text-lg">
-                  Esqueça os papéis perdidos, as acusações de "ele furou a fila" e o DJ sobrecarregado. Com o Fila Videokê, seu cliente foca no que importa: <strong className="text-white"consumir no seu bar enquanto aguarda seu momento de estrela.</strong>
-                </p>
+  Esqueça os papéis perdidos, as reclamações sobre a fila e a
+  sobrecarga da equipe. Com o Fila Videokê, os participantes
+  acompanham sua posição em tempo real enquanto aguardam
+  sua apresentação de forma organizada e profissional.
+</p>
                 <ul className="space-y-4">
                   {[
                     [
