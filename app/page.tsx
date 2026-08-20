@@ -78,13 +78,13 @@ export default function Home() {
               <div>
                 <h3 className="text-3xl font-bold mb-4">Seu cliente veio para cantar, não para passar raiva na fila.</h3>
                 <p className="text-slate-400 mb-6 text-lg">
-                  Esqueça os papéis perdidos, as acusações de "ele furou a fila" e o DJ sobrecarregado. Com o Fila Videokê, seu cliente foca no que importa: <strong className="text-white">consumir no seu bar enquanto aguarda seu momento de estrela.</strong>
+                  Esqueça os papéis perdidos, as acusações de "ele furou a fila" e o DJ sobrecarregado. Com o Fila Videokê, seu cliente foca no que importa: <strong className="text-white"consumir no seu bar enquanto aguarda seu momento de estrela.</strong>
                 </p>
                 <ul className="space-y-4">
                   {[
                     [
-                     "Fila organizada em tempo real",
-                     "Menos trabalho para a equipe",
+                     "Fila organizada em tempo real, ",
+                     "Menos trabalho para a equipe, ",
                      "Experiência moderna para seus clientes"
                     ]
                   ].map((item, i) => (
@@ -113,11 +113,11 @@ export default function Home() {
                   <div className="opacity-50">
                     <div className="text-sm font-semibold mb-2">Próximos:</div>
                     <div className="bg-slate-800/50 rounded-lg p-3 mb-2 flex justify-between">
-                      <span>Mariana (Mesa 04)</span>
+                      <span>Mariana 🎵 È O Amor</span>
                       <span className="text-slate-400">Tempo: ~4 min</span>
                     </div>
                     <div className="bg-slate-800/50 rounded-lg p-3 flex justify-between">
-                      <span>Pedro (Mesa 09)</span>
+                      <span>Pedro 🎵 Despacito </span>
                       <span className="text-slate-400">Tempo: ~8 min</span>
                     </div>
                   </div>
@@ -235,18 +235,12 @@ export default function Home() {
                 <h4 className="text-3xl font-black mb-2">Premium</h4>
                 <p className="text-slate-400 mb-8 pb-8 border-b border-white/10">Para mega operações, redes de bares ou estúdios profissionais.</p>
                 <ul className="space-y-4 mb-8">
-2
-<li>👑 Até 10 Salas</li>
-3
-<li>👑 Todos os Recursos</li>
-4
-<li>👑 Multiambientes</li>
-5
-<li>👑 Operação Profissional</li>
-6
-<li>👑 Suporte Prioritário</li>
-7
-</ul>
+                   <li>👑 Até 10 Salas</li>
+                   <li>👑 Todos os Recursos</li>
+                   <li>👑 Multiambientes</li>
+                   <li>👑 Operação Profissional</li>
+                   <li>👑 Suporte Prioritário</li>
+                </ul>
                 <button
                   onClick={() => window.location.href = "/auth/register"}
                   className="w-full py-4 rounded-xl font-bold bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
