@@ -206,22 +206,25 @@ export default function JuradoPage({
       await supabase
         .from("singer_votes")
         .insert({
-          room_code: roomCode,
+  room_code: roomCode,
 
-          singer_token:
-            currentSinger.singer_token,
+  event_id:
+    performance.event_id,
 
-          voter_token:
-            voterToken,
+  performance_id:
+    performance.id,
 
-          voter_type:
-            "juror",
+  singer_token:
+    currentSinger.singer_token,
 
-          performance_id:
-            performance.id,
+  voter_token:
+    voterToken,
 
-          score,
-        });
+  voter_type:
+    "juror",
+
+  score,
+});
 
     if (voteError) {
       console.error(
