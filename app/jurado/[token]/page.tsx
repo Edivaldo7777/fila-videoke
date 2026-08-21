@@ -101,89 +101,179 @@ export default function JuradoPage({
   }
 
   async function vote() {
-    try {
-      setMessage("");
 
-      if (!currentSinger) {
-        setMessage(
-          "Nenhum cantor está se apresentando."
-        );
-        return;
-      }
+  try {
 
-      if (score === 0) {
-        setMessage(
-          "Selecione uma nota."
-        );
-        return;
-      }
+    setMessage("");
 
-      const { data: profile, error: profileError } =
-        await supabase
-          .from("singer_profile")
-          .select("*")
-          .eq(
-            "singer_name",
-            currentSinger.singer_name
-          )
-          .eq(
-            "room_code",
-            roomCode
-          )
-          .single();
-
-      if (profileError) {
-        console.error(profileError);
-
-        setMessage(
-          profileError.message
-        );
-
-        return;
-      }
-
-      if (!profile) {
-        setMessage(
-          "Cantor não encontrado."
-        );
-        return;
-      }
-
-      const result =
-        await supabase
-          .from("singer_votes")
-          .insert({
-            room_code: roomCode,
-            singer_token:
-              profile.singer_token,
-            voter_token:
-              voterToken,
-            score,
-          });
-
-      if (result.error) {
-        console.error(result.error);
-
-        setMessage(
-          result.error.message
-        );
-
-        return;
-      }
-
+    if (!currentSinger) {
       setMessage(
-        "✅ Voto registrado com sucesso."
+        "Nenhum cantor está se apresentando."
       );
-    } catch (error: any) {
-      console.error(error);
-
-      setMessage(
-        error?.message ||
-          "Erro inesperado ao votar."
-      );
+      return;
     }
+
+    if (score === 0) {
+      setMessage(
+        "Selecione uma nota."
+      );
+      return;
+    }
+
+    if (
+      !currentSinger.singer_token
+    ) {
+      setMessage(
+        "Não foi possível identificar o cantor atual."
+      );
+      return;
+    }
+
+    const {
+      data: performance,
+      error: performanceError,
+    } = await supabase
+      .from("performances")
+      .select("*")
+      .eq(
+        "room_code",
+        roomCode
+      )
+      .eq(
+        "singer_token",
+        currentSinger.singer_token
+      )
+      .order(
+        "created_at",
+        {
+          ascending: false,
+        }
+      )
+      .limit(1)
+      .maybeSingle();
+
+    if (
+      performanceError ||
+      !performance
+    ) {
+      console.error(
+        "Erro ao localizar apresentação:",
+        performanceError
+      );
+
+      setMessage(
+        "A apresentação atual ainda não foi registrada."
+      );
+      return;
+    }
+
+    const {
+      data: existingVote,
+      error: existingVoteError,
+    } = await supabase
+      .from("singer_votes")
+      .select("id")
+      .eq(
+        "performance_id",
+        performance.id
+      )
+      .eq(
+        "voter_token",
+        voterToken
+      )
+      .maybeSingle();
+
+    if (existingVoteError) {
+      console.error(
+        "Erro ao verificar voto:",
+        existingVoteError
+      );
+
+      setMessage(
+        "Não foi possível verificar seu voto."
+      );
+      return;
+    }
+
+    if (existingVote) {
+      setMessage(
+        "Você já votou nesta apresentação."
+      );
+      return;
+    }
+
+    const { error: voteError } =
+      await supabase
+        .from("singer_votes")
+        .insert({
+          room_code: roomCode,
+
+          singer_token:
+            currentSinger.singer_token,
+
+          voter_token:
+            voterToken,
+
+          voter_type:
+            "juror",
+
+          performance_id:
+            performance.id,
+
+          score,
+        });
+
+    if (voteError) {
+      console.error(
+        "Erro ao registrar voto:",
+        voteError
+      );
+
+      if (
+        voteError.code === "23505"
+      ) {
+        setMessage(
+          "Você já votou nesta apresentação."
+        );
+        return;
+      }
+
+      setMessage(
+        voteError.message
+      );
+      return;
+    }
+
+    setMessage(
+      "✅ Voto registrado com sucesso."
+    );
+
+    setScore(0);
+
+  } catch (error: any) {
+
+    console.error(
+      "Erro inesperado ao votar:",
+      error
+    );
+
+    setMessage(
+      error?.message ||
+        "Erro inesperado ao votar."
+    );
+
   }
+}
   async function becomeSinger() {
+
+  if (
+    eventMode !== "interactive"
+  ) {
+    alert(
+      "A troca de participação não está disponível no modo tradicional."
+    );
+    return;
+  }
 
   const confirmed = confirm(
     "Você será colocado no final da fila. Deseja continuar?"
@@ -194,35 +284,68 @@ export default function JuradoPage({
   const token =
     crypto.randomUUID();
 
-  await supabase
-    .from("singer_profile")
-    .insert({
-      singer_token: token,
-      singer_name: voterName,
-      room_code: roomCode,
-      participant_type:
-        "singer",
-      next_song:
-        "Escolherá na hora de cantar",
-    });
+  const { error: profileError } =
+    await supabase
+      .from("singer_profile")
+      .insert({
+        singer_token: token,
+        singer_name: voterName,
+        room_code: roomCode,
+        participant_type:
+          "singer",
+        next_song:
+          "Escolherá na hora de cantar",
+      });
 
-  await supabase
-    .from("queue")
-    .insert({
-      room_code: roomCode,
-      singer_name: voterName,
-      song_name:
-        "Escolherá na hora de cantar",
-      singer_token: token,
-    });
-
-  await supabase
-    .from("voters")
-    .delete()
-    .eq(
-      "voter_token",
-      voterToken
+  if (profileError) {
+    alert(
+      profileError.message
     );
+    return;
+  }
+
+  const { error: queueError } =
+    await supabase
+      .from("queue")
+      .insert({
+        room_code: roomCode,
+        singer_name: voterName,
+        song_name:
+          "Escolherá na hora de cantar",
+        singer_token: token,
+      });
+
+  if (queueError) {
+
+    await supabase
+      .from("singer_profile")
+      .delete()
+      .eq(
+        "singer_token",
+        token
+      );
+
+    alert(
+      queueError.message
+    );
+    return;
+  }
+
+  const { error: voterError } =
+    await supabase
+      .from("voters")
+      .delete()
+      .eq(
+        "voter_token",
+        voterToken
+      );
+
+  if (voterError) {
+    alert(
+      voterError.message
+    );
+    return;
+  }
 
   window.location.href =
     `/cantor/${token}`;
