@@ -460,7 +460,7 @@ export default function OperatorPage({
 
     alert(
       performanceError?.message ||
-      "Erro ao registrar apresentação."
+        "Erro ao registrar apresentação."
     );
     return;
   }
@@ -508,68 +508,71 @@ export default function OperatorPage({
     .select("*")
     .eq(
       "singer_token",
-*     singer.singer_token
+      singer.singer_token
     )
-   *.maybeSingle();
+    .maybeSingle();
 
   let nextSong =
-*   "Escolherá na hora de cantar";
-*  if (
+    "Escolherá na hora de cantar";
+
+  if (
     profile?.next_song &&
- *  profile.next_song.trim() !== ""
-* ) {
+    profile.next_song.trim() !== ""
+  ) {
     nextSong =
-      profile.*ext_song;
+      profile.next_song;
   }
 
   const {
-    error* newQueueError,
-  } = await supaba*e
+    error: newQueueError,
+  } = await supabase
     .from("queue")
-    .insert({*      room_code: roomCode,
-      s*nger_name:
-        singer.singer_n*me,
-      song_name: nextSong,
-   *  singer_token:
-        singer.sin*er_token,
+    .insert({
+      room_code: roomCode,
+      singer_name:
+        singer.singer_name,
+      song_name:
+        nextSong,
+      singer_token:
+        singer.singer_token,
     });
 
-  if (newQueueE*ror) {
+  if (newQueueError) {
     console.error(
-      "E*ro ao recolocar cantor:",
-      ne*QueueError
+      "Erro ao recolocar cantor:",
+      newQueueError
     );
 
     alert(
-    * newQueueError.message
+      newQueueError.message
     );
-    *eturn;
+    return;
   }
 
   await supabase
-    .*rom("singer_profile")
-    .update(*
+    .from("singer_profile")
+    .update({
       next_song:
-        "Escolhe*á na hora de cantar",
+        "Escolherá na hora de cantar",
     })
-    .*q(
+    .eq(
       "singer_token",
-      sin*er.singer_token
+      singer.singer_token
     );
 
   const {
-*   error: removeQueueError,
-  } = *wait supabase
+    error: removeQueueError,
+  } = await supabase
     .from("queue")
- *  .delete()
+    .delete()
     .eq(
       "id",
- *    singer.id
+      singer.id
     );
 
-  if (remove*ueueError) {
+  if (removeQueueError) {
     console.error(
-  *   "Erro ao remover posição anterior:",
+      "Erro ao remover posição anterior:",
       removeQueueError
     );
 
@@ -581,7 +584,6 @@ export default function OperatorPage({
 
   await loadData();
 }
-
   async function clearQueue() {
 
     if (!authorized) {
