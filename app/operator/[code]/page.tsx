@@ -109,26 +109,6 @@ export default function OperatorPage({
 
   async function loadData() {
 
-  const { data: queueData } =
-    await supabase
-      .from("queue")
-      .select("*")
-      .eq(
-        "room_code",
-        roomCode
-      )
-      .order("created_at");
-
-  const { data: current } =
-    await supabase
-      .from("current_singer")
-      .select("*")
-      .eq(
-        "room_code",
-        roomCode
-      )
-      .maybeSingle();
-
   const {
     data: room,
     error: roomError,
@@ -141,43 +121,91 @@ export default function OperatorPage({
     )
     .single();
 
-  if (roomError) {
+  if (
+    roomError ||
+    !room
+  ) {
     console.error(
       "Erro ao carregar sala:",
       roomError
     );
+    return;
   }
 
-  if (room) {
+  setRoomName(
+    room.room_name
+  );
 
-    setRoomName(
-      room.room_name
-    );
+  const eventId =
+    room.current_event_id;
 
-    setEventEnded(
-      room.status === "encerrada"
+  const {
+    data: queueData,
+    error: queueError,
+  } = await supabase
+    .from("queue")
+    .select("*")
+    .eq(
+      "room_code",
+      roomCode
+    )
+    .order("created_at");
+
+  if (queueError) {
+    console.error(
+      "Erro ao carregar fila:",
+      queueError
     );
+  }
+
+  let current = null;
+
+  if (eventId) {
+
+    const {
+      data: currentData,
+      error: currentError,
+    } = await supabase
+      .from("current_singer")
+      .select("*")
+      .eq(
+        "room_code",
+        roomCode
+      )
+      .eq(
+        "event_id",
+        eventId
+      )
+      .maybeSingle();
+
+    if (currentError) {
+      console.error(
+        "Erro ao carregar cantor atual:",
+        currentError
+      );
+    }
+
+    current =
+      currentData || null;
   }
 
   setCurrentSinger(
-    current || null
+    current
   );
 
   setQueue(
     queueData || []
   );
 
-  if (current?.singer_token) {
-
+  if (
+    current?.singer_token
+  ) {
     await loadVotes(
       current.singer_token
     );
-
   } else {
-
     setCurrentScore(0);
     setCurrentVotes(0);
-
   }
 }
   async function loadVotes(
@@ -358,7 +386,9 @@ export default function OperatorPage({
   }
 
   if (queue.length === 0) {
-    alert("Não há participantes na fila.");
+    alert(
+      "Não há participantes na fila."
+    );
     return;
   }
 
@@ -395,7 +425,7 @@ export default function OperatorPage({
 
   if (!room.current_event_id) {
     alert(
-      "Esta sala ainda não possui um evento ativo."
+      "Esta sala não possui um evento ativo."
     );
     return;
   }
@@ -429,10 +459,8 @@ export default function OperatorPage({
     );
 
     alert(
-      `Erro ao registrar apresentação: ${
-        performanceError?.message ||
-        "erro desconhecido"
-      }`
+      performanceError?.message ||
+      "Erro ao registrar apresentação."
     );
     return;
   }
@@ -443,6 +471,8 @@ export default function OperatorPage({
     .from("current_singer")
     .upsert({
       room_code: roomCode,
+      event_id:
+        room.current_event_id,
       singer_name:
         singer.singer_name,
       song_name:
@@ -478,70 +508,68 @@ export default function OperatorPage({
     .select("*")
     .eq(
       "singer_token",
-      singer.singer_token
+*     singer.singer_token
     )
-    .single();
+   *.maybeSingle();
 
   let nextSong =
-    "Escolherá na hora de cantar";
-
-  if (
+*   "Escolherá na hora de cantar";
+*  if (
     profile?.next_song &&
-    profile.next_song.trim() !== ""
-  ) {
+ *  profile.next_song.trim() !== ""
+* ) {
     nextSong =
-      profile.next_song;
+      profile.*ext_song;
   }
 
   const {
-    error: newQueueError,
-  } = await supabase
+    error* newQueueError,
+  } = await supaba*e
     .from("queue")
-    .insert({
-      room_code: roomCode,
-      singer_name:
-        singer.singer_name,
+    .insert({*      room_code: roomCode,
+      s*nger_name:
+        singer.singer_n*me,
       song_name: nextSong,
-      singer_token:
-        singer.singer_token,
+   *  singer_token:
+        singer.sin*er_token,
     });
 
-  if (newQueueError) {
+  if (newQueueE*ror) {
     console.error(
-      "Erro ao recolocar cantor:",
-      newQueueError
+      "E*ro ao recolocar cantor:",
+      ne*QueueError
     );
 
     alert(
-      newQueueError.message
+    * newQueueError.message
     );
-    return;
+    *eturn;
   }
 
   await supabase
-    .from("singer_profile")
-    .update({
+    .*rom("singer_profile")
+    .update(*
       next_song:
-        "Escolherá na hora de cantar",
+        "Escolhe*á na hora de cantar",
     })
-    .eq(
+    .*q(
       "singer_token",
-      singer.singer_token
+      sin*er.singer_token
     );
 
   const {
-    error: removeQueueError,
-  } = await supabase
+*   error: removeQueueError,
+  } = *wait supabase
     .from("queue")
-    .delete()
+ *  .delete()
     .eq(
       "id",
-      singer.id
+ *    singer.id
     );
 
-  if (removeQueueError) {
+  if (remove*ueueError) {
     console.error(
-      "Erro ao remover posição anterior:",
+  *   "Erro ao remover posição anterior:",
       removeQueueError
     );
 
