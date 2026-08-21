@@ -35,26 +35,38 @@ export default function CantorPage({
     init();
   }, [params]);
 
-  // NOVO USE EFFECT: Com Supabase Realtime para a página do cantor
-  useEffect(() => {
+// Atualização automática da página do cantor
+useEffect(() => {
 
-  if (!token) return;
+  if (!token) {
+    return;
+  }
 
-  let channel: any;
+  let channel: any = null;
 
   async function initializeSinger() {
 
     await loadSinger();
 
-    const { data } =
-      await supabase
-        .from("singer_profile")
-        .select("room_code")
-        .eq(
-          "singer_token",
-          token
-        )
-        .maybeSingle();
+    const {
+      data,
+      error,
+    } = await supabase
+      .from("singer_profile")
+      .select("room_code")
+      .eq(
+        "singer_token",
+        token
+      )
+      .maybeSingle();
+
+    if (error) {
+      console.error(
+        "Erro ao localizar sala do cantor:",
+        error
+      );
+      return;
+    }
 
     if (!data?.room_code) {
       return;
@@ -108,16 +120,19 @@ export default function CantorPage({
 
   initializeSinger();
 
-  const timer = window.setInterval(
-    () => {
-      loadSinger();
-    },
-    5000
-  );
+  const timer =
+    window.setInterval(
+      () => {
+        loadSinger();
+      },
+      5000
+    );
 
   return () => {
 
-    window.clearInterval(timer);
+    window.clearInterval(
+      timer
+    );
 
     if (channel) {
       supabase.removeChannel(
@@ -128,121 +143,191 @@ export default function CantorPage({
 
 }, [token]);
 
-    async function initializeSinger() {
-      await loadSinger();
-
-      // Pegamos o roomCode para filtrar o Realtime da sala correta
-      const { data } = await supabase
-        .from("singer_profile")
-        .select("room_code")
-        .eq("singer_token", token)
-        .single();
-
-      if (data?.room_code) {
-        // Inscreve no canal para escutar alterações na fila, sala ou cantor atual
-        channel = supabase
-          .channel("singer_room_updates")
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "queue", filter: `room_code=eq.${data.room_code}` },
-            () => loadSinger()
-          )
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "current_singer", filter: `room_code=eq.${data.room_code}` },
-            () => loadSinger()
-          )
-          .subscribe();
-      }
-    }
-
-    initializeSinger();
-
-    // Limpeza ao sair da página
-    return () => {
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
-    };
-  }, [token]);
 
   async function loadSinger() {
-    if (!token) return;
 
-    const { data } = await supabase
-      .from("singer_profile")
-      .select("*")
-      .eq("singer_token", token)
-      .single();
+  if (!token) {
+    return;
+  }
 
-    if (!data) return;
+  const {
+    data,
+    error: profileError,
+  } = await supabase
+    .from("singer_profile")
+    .select("*")
+    .eq(
+      "singer_token",
+      token
+    )
+    .maybeSingle();
 
-    setSingerName(data.singer_name);
-    setRoomCode(data.room_code);
-    
-    const { data: room } = await supabase
-      .from("rooms")
-      .select("*")
-      .eq("room_code", data.room_code)
-      .single();
+  if (
+    profileError ||
+    !data
+  ) {
+    if (profileError) {
+      console.error(
+        "Erro ao carregar cantor:",
+        profileError
+      );
+    }
 
-    if (room) {
+    return;
+  }
+
+  setSingerName(
+    data.singer_name
+  );
+
+  setRoomCode(
+    data.room_code
+  );
+
+  const {
+    data: room,
+    error: roomError,
+  } = await supabase
+    .from("rooms")
+    .select("*")
+    .eq(
+      "room_code",
+      data.room_code
+    )
+    .single();
+
+  if (
+    roomError ||
+    !room
+  ) {
+    console.error(
+      "Erro ao carregar sala:",
+      roomError
+    );
+    return;
+  }
 
   setEventMode(
     room.event_mode ||
     "traditional"
   );
 
+  const ended =
+    room.status === "encerrada";
+
   setEventEnded(
-    room.status === "encerrada"
+    ended
   );
 
-  if (
-    room.status === "encerrada"
-  ) {
+  if (ended) {
     setCurrentSinger(null);
     setPosition(null);
+    setVoteScore(0);
+    setVoteMessage("");
     return;
   }
-}
 
-    setNextSong((currentValue) => {
-      if (currentValue === "" && data.next_song) {
+  const eventId =
+    room.current_event_id;
+
+  setNextSong(
+    (currentValue) => {
+
+      if (
+        currentValue === "" &&
+        data.next_song
+      ) {
         return data.next_song;
       }
+
       return currentValue;
-    });
+    }
+  );
 
-    const { data: queueData } = await supabase
-      .from("queue")
-      .select("*")
-      .eq("room_code", data.room_code)
-      .order("created_at");
+  const {
+    data: queueData,
+    error: queueError,
+  } = await supabase
+    .from("queue")
+    .select("*")
+    .eq(
+      "room_code",
+      data.room_code
+    )
+    .order("created_at");
 
-    if (queueData) {
-      const index = queueData.findIndex(
-        (item: any) => item.singer_token === token
+  if (queueError) {
+    console.error(
+      "Erro ao carregar fila:",
+      queueError
+    );
+  }
+
+  if (queueData) {
+
+    const index =
+      queueData.findIndex(
+        (item: any) =>
+          item.singer_token ===
+          token
       );
 
-      if (index >= 0) {
-        setPosition(index + 1);
-      } else {
-        setPosition(null);
-      }
-    }
-
-    const { data: current } = await supabase
-      .from("current_singer")
-      .select("*")
-      .eq("room_code", data.room_code)
-      .single();
-
-    if (current) {
-      setCurrentSinger(current);
+    if (index >= 0) {
+      setPosition(
+        index + 1
+      );
     } else {
-      setCurrentSinger(null);
+      setPosition(null);
     }
+
+  } else {
+
+    setPosition(null);
+
   }
+
+  if (!eventId) {
+    setCurrentSinger(null);
+    setVoteScore(0);
+    setVoteMessage("");
+    return;
+  }
+
+  const {
+    data: current,
+    error: currentError,
+  } = await supabase
+    .from("current_singer")
+    .select("*")
+    .eq(
+      "room_code",
+      data.room_code
+    )
+    .eq(
+      "event_id",
+      eventId
+    )
+    .maybeSingle();
+
+  if (currentError) {
+    console.error(
+      "Erro ao carregar cantor atual:",
+      currentError
+    );
+
+    setCurrentSinger(null);
+    return;
+  }
+
+  setCurrentSinger(
+    current || null
+  );
+
+  if (!current) {
+    setVoteScore(0);
+    setVoteMessage("");
+  }
+}
 
   async function saveNextSong() {
     const { error } = await supabase
@@ -378,13 +463,17 @@ export default function CantorPage({
     .from("performances")
     .select("*")
     .eq(
-      "room_code",
-      roomCode
-    )
-    .eq(
-      "singer_token",
-      currentSinger.singer_token
-    )
+  "room_code",
+  roomCode
+)
+.eq(
+  "event_id",
+  currentSinger.event_id
+)
+.eq(
+  "singer_token",
+  currentSinger.singer_token
+)
     .order(
       "created_at",
       {
