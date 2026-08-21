@@ -19,6 +19,11 @@ export default function CantorPage({
   const [position, setPosition] = useState<number | null>(null);
   const [currentSinger, setCurrentSinger] =
      useState<any>(null);
+  const [voteScore, setVoteScore] =
+     useState(0);
+
+  const [voteMessage, setVoteMessage] =
+    useState("");
 
   useEffect(() => {
     async function init() {
@@ -152,43 +157,226 @@ export default function CantorPage({
   }
   
   async function becomeJuror() {
-    const confirmed = confirm(
-      "Você perderá sua posição na fila e passará a atuar como jurado. Deseja continuar?"
+
+  if (
+    currentSinger?.singer_token ===
+    token
+  ) {
+    alert(
+      "Você está se apresentando neste momento."
     );
-
-    if (!confirmed) return;
-    if (
-  position === 1
-) {
-  alert(
-    "Você é o próximo da fila e não pode sair agora."
-  );
-  return;
-}
-    if (
-  currentSinger?.singer_token ===
-  token
-) {
-  alert(
-    "Você está se apresentando neste momento."
-  );
-  return;
-}
-
-    const voterToken = crypto.randomUUID();
-
-    await supabase.from("voters").insert({
-      room_code: roomCode,
-      voter_token: voterToken,
-      voter_name: singerName,
-    });
-
-    await supabase.from("queue").delete().eq("singer_token", token);
-    await supabase.from("singer_profile").delete().eq("singer_token", token);
-
-    window.location.href = `/jurado/${voterToken}`;
+    return;
   }
 
+  if (position === 1) {
+    alert(
+      "Você é o próximo da fila e não pode sair agora."
+    );
+    return;
+  }
+
+  const confirmed = confirm(
+    "Você perderá sua posição na fila e passará a atuar como jurado. Deseja continuar?"
+  );
+
+  if (!confirmed) return;
+
+  const voterToken =
+    crypto.randomUUID();
+
+  const { error: voterError } =
+    await supabase
+      .from("voters")
+      .insert({
+        room_code: roomCode,
+        voter_token: voterToken,
+        voter_name: singerName,
+      });
+
+  if (voterError) {
+    alert(voterError.message);
+    return;
+  }
+
+  const { error: queueError } =
+    await supabase
+      .from("queue")
+      .delete()
+      .eq(
+        "singer_token",
+        token
+      );
+
+  if (queueError) {
+    alert(queueError.message);
+    return;
+  }
+
+  const { error: profileError } =
+    await supabase
+      .from("singer_profile")
+      .delete()
+      .eq(
+        "singer_token",
+        token
+      );
+
+  if (profileError) {
+    alert(profileError.message);
+    return;
+  }
+
+  window.location.href =
+    `/jurado/${voterToken}`;
+}
+  
+  async function voteCurrentSinger() {
+
+  setVoteMessage("");
+
+  if (
+    eventMode !== "interactive"
+  ) {
+    setVoteMessage(
+      "A votação por cantores está disponível apenas no modo interativo."
+    );
+    return;
+  }
+
+  if (!currentSinger) {
+    setVoteMessage(
+      "Nenhum cantor está se apresentando."
+    );
+    return;
+  }
+
+  if (
+    currentSinger.singer_token === token
+  ) {
+    setVoteMessage(
+      "Você não pode votar na própria apresentação."
+    );
+    return;
+  }
+
+  if (voteScore === 0) {
+    setVoteMessage(
+      "Selecione uma nota."
+    );
+    return;
+  }
+
+  const {
+    data: performance,
+    error: performanceError,
+  } = await supabase
+    .from("performances")
+    .select("*")
+    .eq(
+      "room_code",
+   *  roomCode
+    )
+    .eq(
+      "s*nger_token",
+      currentSinger.s*nger_token
+    )
+    .order(
+     *"created_at",
+      {
+        asce*ding: false,
+      }
+    )
+    .li*it(1)
+    .maybeSingle();
+
+  if (
+*   performanceError ||
+    !perfor*ance
+  ) {
+    console.error(
+    * "Erro ao localizar apresentação:"*
+      performanceError
+    );
+
+  * setVoteMessage(
+      "A apresent*ção atual ainda não foi registrada*"
+    );
+    return;
+  }
+
+  const *
+    data: existingVote,
+    error* existingVoteError,
+  } = await su*abase
+    .from("singer_votes")
+  * .select("id")
+    .eq(
+      "per*ormance_id",
+      performance.id
+*   )
+    .eq(
+      "voter_token",*      token
+    )
+    .maybeSingle*);
+
+  if (existingVoteError) {
+   *console.error(
+      "Erro ao veri*icar voto:",
+      existingVoteErr*r
+    );
+
+    setVoteMessage(
+    * "Não foi possível verificar seu v*to."
+    );
+    return;
+  }
+
+  if *existingVote) {
+    setVoteMessage*
+      "Você já votou nesta aprese*tação."
+    );
+    return;
+  }
+
+  *onst { error } =
+    await supabas*
+      .from("singer_votes")
+     *.insert({
+        room_code: roomC*de,
+        singer_token:
+        * currentSinger.singer_token,
+     *  voter_token: token,
+        vote*_type: "singer",
+        performan*e_id:
+          performance.id,
+        score: voteScore,
+      });
+
+  if (error) {
+    console.error(
+      "Erro ao registrar voto:",
+      error
+    );
+
+    if (error.code === "23505") {
+      setVoteMessage(
+        "Você já votou nesta apresentação."
+      );
+      return;
+    }
+
+    setVoteMessage(
+      error.message
+    );
+    return;
+  }
+
+  setVoteMessage(
+    "✅ Voto registrado com sucesso."
+  );
+
+  setVoteScore(0);
+}
   const singersAhead = position && position > 1 ? position - 1 : 0;
   const estimatedMinutes = singersAhead * 5;
 
@@ -289,7 +477,71 @@ export default function CantorPage({
             </button>
           )}
         </div>
+        {eventMode === "interactive" &&
+  currentSinger &&
+  currentSinger.singer_token !== token && (
 
+  <div className="mt-8 border-t border-slate-200 pt-6">
+
+    <h3 className="font-bold text-xl mb-2">
+      ⭐ Avaliar Apresentação Atual
+    </h3>
+
+    <p className="text-slate-600 mb-4">
+      Avalie a apresentação de{" "}
+      <strong>
+        {currentSinger.singer_name}
+      </strong>
+    </p>
+
+    <div className="grid grid-cols-5 gap-2 mb-4">
+
+      {[1, 2, 3, 4, 5].map(
+        (value) => (
+
+          <button
+            key={value}
+            onClick={() => {
+              setVoteScore(value);
+              setVoteMessage("");
+            }}
+            className={`p-3 rounded text-xl ${
+              voteScore === value
+                ? "bg-yellow-500 text-black"
+                : "bg-slate-200 text-slate-700"
+            }`}
+          >
+            ⭐
+          </button>
+
+        )
+      )}
+
+    </div>
+
+    <div className="mb-4 text-slate-700">
+      Nota selecionada:{" "}
+      <strong>{voteScore}</strong>
+    </div>
+
+    <button
+      onClick={voteCurrentSinger}
+      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+    >
+      Enviar Voto
+    </button>
+
+    {voteMessage && (
+
+      <p className="mt-3 font-bold text-slate-700">
+        {voteMessage}
+      </p>
+
+    )}
+
+  </div>
+
+)}
         {message && (
           <p className="mt-4 text-green-600 font-bold">
             {message}
