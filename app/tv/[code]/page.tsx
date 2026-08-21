@@ -181,6 +181,12 @@ export default function TvPage({
     performanceError ||
     !performance
   ) {
+
+    console.error(
+      "Erro ao localizar apresentação atual:",
+      performanceError
+    );
+
     setCurrentScore(0);
     setCurrentVotes(0);
     return;
@@ -191,7 +197,7 @@ export default function TvPage({
     error: votesError,
   } = await supabase
     .from("singer_votes")
-    .select("*")
+    .select("score")
     .eq(
       "room_code",
       roomCode
@@ -210,13 +216,24 @@ export default function TvPage({
     !votes ||
     votes.length === 0
   ) {
+
+    if (votesError) {
+      console.error(
+        "Erro ao carregar votos:",
+        votesError
+      );
+    }
+
     setCurrentScore(0);
     setCurrentVotes(0);
     return;
   }
 
   const total = votes.reduce(
-    (sum: number, vote: any) =>
+    (
+      sum: number,
+      vote: any
+    ) =>
       sum + Number(vote.score),
     0
   );
