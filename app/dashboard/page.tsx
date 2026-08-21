@@ -84,49 +84,116 @@ async function loadRooms() {
 ) {
 
   const confirmed = confirm(
-    "Iniciar um novo evento?"
+    "Iniciar um novo evento? A fila atual será limpa, mas o histórico do evento anterior será preservado."
   );
 
-  if (!confirmed) return;
+  if (!confirmed) {
+    return;
+  }
 
-  await supabase
-    .from("queue")
-    .delete()
+  const {
+    data: room,
+    error: roomError,
+  } = await supabase
+    .from("rooms")
+    .select("*")
     .eq(
       "room_code",
-      roomCode
+   *  roomCode
+    )
+    .single();
+
+ *if (
+    roomError ||
+    !room
+  * {
+    console.error(
+      "Erro *o localizar sala:",
+      roomErro*
     );
 
-  await supabase
-    .from("current_singer")
-    .delete()
-    .eq(
-      "room_code",
-      roomCode
+    alert(
+      "Não foi*possível localizar a sala."
+    );*    return;
+  }
+
+  if (
+    room.s*atus !== "encerrada"
+  ) {
+    ale*t(
+      "O evento atual ainda não*foi encerrado."
     );
+    return;*  }
 
-  await supabase
-    .from("performances")
-    .delete()
-    .eq(
-      "room_code",
-      roomCode
-    );
+  if (room.current_event_id) *
 
-  await supabase
-    .from("singer_votes")
-    .delete();
+    const {
+      error: previou*EventError,
+    } = await supabase*      .from("events")
+      .updat*({
+        status: "finished",
+   *    ended_at:
+          new Date()*toISOString(),
+      })
+      .eq(*        "id",
+        room.current*event_id
+      )
+      .eq(
+      * "room_code",
+        roomCode
+      );
 
-  await supabase
-    .from("event_status")
-    .upsert({
+    if (previousEventError) {
+      console.error(
+        "Erro ao finalizar evento anterior:",
+        previousEventError
+      );
+
+      alert(
+        previousEventError.message
+      );
+      return;
+    }
+  }
+
+  const {
+    data: newEvent,
+    error: newEventError,
+  } = await supabase
+    .from("events")
+    .insert({
       room_code: roomCode,
       status: "running",
-    });
+    })
+    .select("id")
+    .single();
 
-  await supabase
+  if (
+    newEventError ||
+    !newEvent
+  ) {
+    console.error(
+      "Erro ao criar novo evento:",
+      newEventError
+    );
+
+    alert(
+      `Não foi possível criar o novo evento: ${
+        newEventError?.message ||
+        "erro desconhecido"
+      }`
+    );
+
+    return;
+  }
+
+  const {
+    error: roomUpdateError,
+  } = await supabase
     .from("rooms")
     .update({
+      current_event_id:
+        newEvent.id,
       status: "ao_vivo",
     })
     .eq(
@@ -134,11 +201,86 @@ async function loadRooms() {
       roomCode
     );
 
+  if (roomUpdateError) {
+    console.error(
+      "Erro ao atualizar sala:",
+      roomUpdateError
+    );
+
+    await supabase
+      .from("events")
+      .delete()
+      .eq(
+        "id",
+        newEvent.id
+      );
+
+    alert(
+      roomUpdateError.message
+    );
+    return;
+  }
+
+  const {
+    error: queueError,
+  } = await supabase
+    .from("queue")
+    .delete()
+    .eq(
+      "room_code",
+      roomCode
+    );
+
+  if (queueError) {
+    console.error(
+      "Erro ao limpar fila:",
+      queueError
+    );
+  }
+
+  const {
+    error: currentSingerError,
+  } = await supabase
+    .from("current_singer")
+    .delete()
+    .eq(
+      "room_code",
+      roomCode
+    );
+
+  if (currentSingerError) {
+    console.error(
+      "Erro ao limpar cantor atual:",
+      currentSingerError
+    );
+  }
+
+  const {
+    error: statusError,
+  } = await supabase
+    .from("event_status")
+    .upsert({
+      room_code: roomCode,
+      status: "running",
+    });
+
+  if (statusError) {
+    console.error(
+      "Erro ao atualizar status do evento:",
+      statusError
+    );
+
+    alert(
+      statusError.message
+    );
+    return;
+  }
+
   alert(
-    "Novo evento iniciado com sucesso."
+    "Novo evento iniciado com sucesso. O histórico anterior foi preservado."
   );
 
-  loadRooms();
+  await loadRooms();
 }
 
   async function createRoom() {
