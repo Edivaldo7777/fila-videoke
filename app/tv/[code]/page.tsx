@@ -432,6 +432,7 @@ export default function TvPage({
 
   const {
     data: statusData,
+    error: statusError,
   } = await supabase
     .from("event_status")
     .select("*")
@@ -440,6 +441,13 @@ export default function TvPage({
       roomCode
     )
     .maybeSingle();
+
+  if (statusError) {
+    console.error(
+      "Erro ao carregar status:",
+      statusError
+    );
+  }
 
   if (statusData?.status) {
     setEventStatus(
@@ -456,17 +464,6 @@ export default function TvPage({
     );
     return;
   }
-
-  const {
-    data: current,
-  } = await supabase
-    .from("current_singer")
-    .select("*")
-    .eq(
-      "room_code",
-      roomCode
-    )
-    .maybeSingle();
 
   const {
     data: queueData,
@@ -487,20 +484,44 @@ export default function TvPage({
     );
   }
 
-  setCurrentSinger(
-    current || null
-  );
-
   setQueue(
     queueData || []
   );
 
   if (!eventId) {
+    setCurrentSinger(null);
     setCurrentScore(0);
     setCurrentVotes(0);
     setTopRanking([]);
     return;
   }
+
+  const {
+    data: current,
+    error: currentError,
+  } = await supabase
+    .from("current_singer")
+    .select("*")
+    .eq(
+      "room_code",
+      roomCode
+    )
+    .eq(
+      "event_id",
+      eventId
+    )
+    .maybeSingle();
+
+  if (currentError) {
+    console.error(
+      "Erro ao carregar cantor atual:",
+      currentError
+    );
+  }
+
+  setCurrentSinger(
+    current || null
+  );
 
   if (
     current?.singer_token
