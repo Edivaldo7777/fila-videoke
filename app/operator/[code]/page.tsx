@@ -532,258 +532,21 @@ if (current?.singer_token) {
 
   async function endEvent() {
 
-    if (!authorized) {
-        alert("Acesso negado.");
+  if (!authorized) {
+    alert("Acesso negado.");
     return;
-    }
+  }
+
   const confirmed = confirm(
     "Tem certeza que deseja encerrar o evento?"
   );
 
   if (!confirmed) return;
 
-  const { data: votes } =
-    await supabase
-      .from("singer_votes")
-      .select("*");
-
-  const { data: performances } =
-    await supabase
-      .from("performances")
-      .select("*");
-
-  if (votes && votes.length > 0) {
-    const rankingMap: any = {};
-
-    votes.forEach((vote: any) => {
-      if (!rankingMap[vote.singer_token]) {
-        rankingMap[vote.singer_token] = {
-          singer_token: vote.singer_token,
-          total: 0,
-          count: 0,
-          presentations: 0,
-        };
-      }
-
-      rankingMap[vote.singer_token].total +=
-        Number(vote.score);
-
-      rankingMap[vote.singer_token].count += 1;
-    });
-
-    if (performances) {
-      performances.forEach(
-        (performance: any) => {
-          if (
-            rankingMap[
-              performance.singer_token
-            ]
-          ) {
-            rankingMap[
-              performance.singer_token
-            ].presentations += 1;
-          }
-        }
-      );
-    }
-
-    const ranking = await Promise.all(
-      Object.values(rankingMap).map(
-        async (item: any) => {
-          const { data: singer } =
-            await supabase
-              .from("singer_profile")
-              .select("*")
-              .eq(
-                "singer_token",
-                item.singer_token
-              )
-              .single();
-
-          return {
-            singer_name:
-              singer?.singer_name ||
-              "Desconhecido",
-
-            average:
-              item.total /
-              item.count,
-
-            presentations:
-              item.presentations,
-          };
-        }
-      )
-    );
-
-    const champions = ranking
-      .filter(
-        (item) =>
-          item.presentations >= 3
-      )
-      .sort(
-        (a, b) =>
-          b.average - a.average
-      );
-
-    const revelations = ranking
-      .filter(
-        (item) =>
-          item.presentations < 3
-      )
-      .sort(
-        (a, b) =>
-          b.average - a.average
-      );
-
-    const champion =
-      champions.length > 0
-        ? champions[0]
-        : null;
-
-    const revelation =
-      revelations.length > 0
-        ? revelations[0]
-        : null;
-
-    let bestSongName = null;
-let bestSongSinger = null;
-let bestSongAverage = null;
-
-const { data: performancesData } =
-  await supabase
-    .from("performances")
-    .select("*");
-
-if (
-  performancesData &&
-  performancesData.length > 0
-) {
-  const performanceRanking =
-    performancesData.map(
-      (performance: any) => {
-        const singerData =
-          ranking.find(
-            (item: any) =>
-              item.singer_name ===
-              performance.singer_name
-          );
-
-        return {
-          singer_name:
-            performance.singer_name,
-
-          song_name:
-            performance.song_name,
-
-          average:
-            singerData?.average || 0,
-        };
-      }
-    );
-
-  performanceRanking.sort(
-    (a: any, b: any) =>
-      b.average - a.average
-  );
-
-  if (performanceRanking[0]) {
-    bestSongName =
-      performanceRanking[0].song_name;
-
-    bestSongSinger =
-      performanceRanking[0].singer_name;
-
-    bestSongAverage =
-      performanceRanking[0].average;
-  }
-}
-
-await supabase
-  .from("hall_of_fame")
-  .insert({
-    room_code: roomCode,
-
-    champion_name:
-      champion?.singer_name ||
-      null,
-
-    champion_average:
-      champion?.average || null,
-
-    champion_presentations:
-      champion?.presentations ||
-      0,
-
-    revelation_name:
-      revelation?.singer_name ||
-      null,
-
-    revelation_average:
-      revelation?.average ||
-      null,
-
-    revelation_presentations:
-      revelation?.presentations ||
-      0,
-
-    best_song_name:
-      bestSongName,
-
-    best_song_singer:
-      bestSongSinger,
-
-    best_song_average:
-      bestSongAverage,
-
-    total_presentations:
-      champion?.presentations ||
-      0,
-  });
-
-    let message =
-      "🏆 PREMIAÇÃO DA NOITE\n\n";
-
-    if (champion) {
-      message +=
-        `👑 Campeão da Noite\n` +
-        `${champion.singer_name}\n` +
-        `⭐ ${champion.average.toFixed(
-          2
-        )}\n` +
-        `🎤 ${champion.presentations} apresentações\n\n`;
-    }
-
-    if (revelation) {
-  message +=
-    `⭐ Revelação da Noite\n` +
-    `${revelation.singer_name}\n` +
-    `⭐ ${revelation.average.toFixed(
-      2
-    )}\n` +
-    `🎤 ${revelation.presentations} apresentações\n\n`;
-}
-
-if (bestSongName) {
-  message +=
-    `🎵 Melhor Música da Noite\n` +
-    `${bestSongName}\n` +
-    `${bestSongSinger}\n` +
-    `⭐ ${Number(
-      bestSongAverage
-    ).toFixed(2)}`;
-}
-
-    alert(message);
-
-await supabase
-  .from("event_status")
-  .upsert({
-    room_code: roomCode,
-    status: "awards",
-  });
-  const { data: roomBefore } =
-  await supabase
+  const {
+    data: room,
+    error: roomError,
+  } = await supabase
     .from("rooms")
     .select("*")
     .eq(
@@ -792,56 +555,390 @@ await supabase
     )
     .single();
 
-console.log(
-  "ANTES:",
-  roomBefore
-);
+  if (
+    roomError ||
+    !room
+  ) {
+    console.error(
+      "Erro ao localizar sala:",
+      roomError
+    );
 
-const { data: roomUpdated, error: roomError } =
-  await supabase
-    .from("rooms")
-    .update({
-      status: "encerrada",
-    })
+    alert(
+      "Não foi possível localizar a sala."
+    );
+    return;
+  }
+
+  const currentEventId =
+    room.current_event_id;
+
+  if (!currentEventId) {
+    alert(
+      "Esta sala não possui um evento ativo."
+    );
+    return;
+  }
+
+  const {
+    data: performances,
+    error: performancesError,
+  } = await supabase
+    .from("performances")
+    .select("*")
     .eq(
       "room_code",
-      roomCode.trim()
+      roomCode
     )
-    .select();
+    .eq(
+      "event_id",
+      currentEventId
+    );
 
-console.log(
-  "ROOM CODE:",
-  roomCode
-);
+  if (performancesError) {
+    console.error(
+      "Erro nas apresentações:",
+      performancesError
+    );
 
-console.log(
-  "ROOM UPDATED:",
-  roomUpdated
-);
+    alert(
+      performancesError.message
+    );
+    return;
+  }
 
-console.log(
-  "ROOM ERROR:",
-  roomError
-);
+  const {
+    data: votes,
+    error: votesError,
+  } = await supabase
+    .from("singer_votes")
+    .select("*")
+    .eq(
+      "room_code",
+      roomCode
+    )
+    .eq(
+      "event_id",
+      currentEventId
+    );
 
-console.log(
-  "DEPOIS:",
-  roomUpdated
-);
+  if (votesError) {
+    console.error(
+      "Erro nos votos:",
+      votesError
+    );
 
-console.log(
-  "ERRO:",
-  roomError
-);
+    alert(
+      votesError.message
+    );
+    return;
+  }
 
-if (roomError) {
-  alert(
-    `Erro status sala: ${roomError.message}`
-  );
-}
+  const validPerformances =
+    performances || [];
 
-const { error: roomStatusError } =
+  const validVotes =
+    votes || [];
+
+  if (
+    validPerformances.length === 0
+  ) {
+    alert(
+      "Nenhuma apresentação foi registrada neste evento."
+    );
+    return;
+  }
+
+  if (validVotes.length === 0) {
+    alert(
+      "Nenhum voto foi registrado neste evento."
+    );
+    return;
+  }
+
+  const singerRankingMap: Record<
+    string,
+    {
+      singer_token: string;
+      singer_name: string;
+      total: number;
+      count: number;
+      presentations: number;
+    }
+  > = {};
+
+  for (
+    const performance
+    of validPerformances
+  ) {
+
+    const singerToken =
+      performance.singer_token;
+
+    if (
+      !singerRankingMap[
+        singerToken
+      ]
+    ) {
+      singerRankingMap[
+        singerToken
+      ] = {
+        singer_token:
+          singerToken,
+        singer_name:
+          performance.singer_name ||
+          "Desconhecido",
+        total: 0,
+        count: 0,
+        presentations: 0,
+      };
+    }
+
+    singerRankingMap[
+      singerToken
+    ].presentations += 1;
+  }
+
+  for (
+    const vote
+    of validVotes
+  ) {
+
+    const singerToken =
+      vote.singer_token;
+
+    if (
+      !singerRankingMap[
+        singerToken
+      ]
+    ) {
+      continue;
+    }
+
+    singerRankingMap[
+      singerToken
+    ].total +=
+      Number(vote.score);
+
+    singerRankingMap[
+      singerToken
+    ].count += 1;
+  }
+
+  const ranking =
+    Object.values(
+      singerRankingMap
+    )
+      .filter(
+        (item) =>
+          item.count > 0
+      )
+      .map(
+        (item) => ({
+          ...item,
+
+          average:
+            item.total /
+            item.count,
+        })
+      );
+
+  const champions =
+    ranking
+      .filter(
+        (item) =>
+          item.presentations >= 3
+      )
+      .sort(
+        (a, b) =>
+          b.average -
+          a.average
+      );
+
+  const revelations =
+    ranking
+      .filter(
+        (item) =>
+          item.presentations < 3
+      )
+      .sort(
+        (a, b) =>
+          b.average -
+          a.average
+      );
+
+  const champion =
+    champions[0] || null;
+
+  const revelation =
+    revelations[0] || null;
+
+  const performanceRanking =
+    validPerformances
+      .map(
+        (performance) => {
+
+          const performanceVotes =
+            validVotes.filter(
+              (vote) =>
+                vote.performance_id ===
+                performance.id
+            );
+
+          if (
+            performanceVotes.length === 0
+          ) {
+            return null;
+          }
+
+          const total =
+            performanceVotes.reduce(
+              (sum, vote) =>
+                sum +
+                Number(
+                  vote.score
+                ),
+              0
+            );
+
+          return {
+            performance_id:
+              performance.id,
+
+            singer_name:
+              performance.singer_name,
+
+            song_name:
+              performance.song_name,
+
+            average:
+              total /
+              performanceVotes.length,
+
+            votes:
+              performanceVotes.length,
+          };
+        }
+      )
+      .filter(
+        (
+          item
+        ): item is NonNullable<
+          typeof item
+        > => item !== null
+      )
+      .sort(
+        (a, b) =>
+          b.average -
+          a.average
+      );
+
+  const bestSong =
+    performanceRanking[0] ||
+    null;
+
+  const {
+    error: hallError,
+  } = await supabase
+    .from("hall_of_fame")
+    .insert({
+      room_code: roomCode,
+
+      event_id:
+        currentEventId,
+
+      champion_name:
+        champion?.singer_name ||
+        null,
+
+      champion_average:
+        champion?.average ||
+        null,
+
+      champion_presentations:
+        champion?.presentations ||
+        0,
+
+      revelation_name:
+        revelation?.singer_name ||
+        null,
+
+      revelation_average:
+        revelation?.average ||
+        null,
+
+      revelation_presentations:
+        revelation?.presentations ||
+        0,
+
+      best_song_name:
+        bestSong?.song_name ||
+        null,
+
+      best_song_singer:
+        bestSong?.singer_name ||
+        null,
+
+      best_song_average:
+        bestSong?.average ||
+        null,
+
+      total_presentations:
+        validPerformances.length,
+    });
+
+  if (hallError) {
+    console.error(
+      "Erro no Hall da Fama:",
+      hallError
+    );
+
+    alert(
+      hallError.message
+    );
+    return;
+  }
+
+  const {
+    error: eventError,
+  } = await supabase
+    .from("events")
+    .update({
+      status: "finished",
+      ended_at:
+        new Date().toISOString(),
+    })
+    .eq(
+      "id",
+      currentEventId
+    )
+    .eq(
+      "room_code",
+      roomCode
+    );
+
+  if (eventError) {
+    console.error(
+      "Erro ao encerrar evento:",
+      eventError
+    );
+
+    alert(
+      eventError.message
+    );
+    return;
+  }
+
   await supabase
+    .from("event_status")
+    .upsert({
+      room_code: roomCode,
+      status: "awards",
+    });
+
+  const {
+    error: roomStatusError,
+  } = await supabase
     .from("rooms")
     .update({
       status: "encerrada",
@@ -851,30 +948,70 @@ const { error: roomStatusError } =
       roomCode
     );
 
-if (roomStatusError) {
-  console.error(
-    roomStatusError
-  );
+  if (roomStatusError) {
+    console.error(
+      "Erro ao encerrar sala:",
+      roomStatusError
+    );
 
-  alert(
-    `Erro ao atualizar status da sala: ${roomStatusError.message}`
-  );
-  }
+    alert(
+      roomStatusError.message
+    );
+    return;
   }
 
   await supabase
     .from("queue")
     .delete()
-    .eq("room_code", roomCode);
+    .eq(
+      "room_code",
+      roomCode
+    );
 
   await supabase
     .from("current_singer")
     .delete()
-    .eq("room_code", roomCode);
+    .eq(
+      "room_code",
+      roomCode
+    );
 
   setCurrentSinger(null);
+  setCurrentScore(0);
+  setCurrentVotes(0);
 
-  loadData();
+  await loadData();
+
+  let awardMessage =
+    "🏆 PREMIAÇÃO DA NOITE\n\n";
+
+  if (champion) {
+    awardMessage +=
+      `👑 Campeão da Noite\n` +
+      `${champion.singer_name}\n` +
+      `⭐ ${champion.average.toFixed(2)}\n` +
+      `🎤 ${champion.presentations} apresentação(ões)\n\n`;
+  }
+
+  if (revelation) {
+    awardMessage +=
+      `⭐ Revelação da Noite\n` +
+      `${revelation.singer_name}\n` +
+      `⭐ ${revelation.average.toFixed(2)}\n` +
+      `🎤 ${revelation.presentations} apresentação(ões)\n\n`;
+  }
+
+  if (bestSong) {
+    awardMessage +=
+      `🎵 Melhor Música da Noite\n` +
+      `${bestSong.song_name}\n` +
+      `${bestSong.singer_name}\n` +
+      `⭐ ${bestSong.average.toFixed(2)}\n`;
+  }
+
+  alert(
+    awardMessage
+  );
 
   alert(
     "Evento encerrado com sucesso."
