@@ -343,7 +343,9 @@ const { data: votes } =
        "awards"
     ) 
     {
-     router.push("/awards");
+     router.push(
+  `/awards/${roomCode}`
+);
      return;
     }
 
