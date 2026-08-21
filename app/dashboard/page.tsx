@@ -99,47 +99,51 @@ async function loadRooms() {
     .select("*")
     .eq(
       "room_code",
-   *  roomCode
+      roomCode
     )
     .single();
 
- *if (
+  if (
     roomError ||
     !room
-  * {
+  ) {
     console.error(
-      "Erro *o localizar sala:",
-      roomErro*
+      "Erro ao localizar sala:",
+      roomError
     );
 
     alert(
-      "Não foi*possível localizar a sala."
-    );*    return;
+      "Não foi possível localizar a sala."
+    );
+    return;
   }
 
   if (
-    room.s*atus !== "encerrada"
+    room.status !== "encerrada"
   ) {
-    ale*t(
-      "O evento atual ainda não*foi encerrado."
+    alert(
+      "O evento atual ainda não foi encerrado."
     );
-    return;*  }
+    return;
+  }
 
-  if (room.current_event_id) *
+  if (room.current_event_id) {
 
     const {
-      error: previou*EventError,
-    } = await supabase*      .from("events")
-      .updat*({
+      error: previousEventError,
+    } = await supabase
+      .from("events")
+      .update({
         status: "finished",
-   *    ended_at:
-          new Date()*toISOString(),
+        ended_at:
+          new Date().toISOString(),
       })
-      .eq(*        "id",
-        room.current*event_id
+      .eq(
+        "id",
+        room.current_event_id
       )
       .eq(
-      * "room_code",
+        "room_code",
         roomCode
       );
 
