@@ -79,187 +79,180 @@ export default function AwardsPage({
 
   async function loadData() {
 
-    setErrorMessage("");
+  setErrorMessage("");
 
-    const {
-      data: roomData,
-      error: roomError,
-    } = await supabase
-      .from("rooms")
-      .select("*")
-      .eq(
-        "room_code",*        roomCode
-      )
-      .si*gle();
-
-    if (
-      roomError |*
-      !roomData
-    ) {
-
-      co*sole.error(
-        "Erro ao carre*ar sala:",
-        roomError
-     *);
-
-      setErrorMessage(
-       *"Sala não encontrada."
-      );
-
-      setLoading(false);
-
-      return;
-    }
-
-    setRoomName(
-      roomData.room_name ||
+  const {
+    data: roomData,
+    error: roomError,
+  } = await supabase
+    .from("rooms")
+    .select("*")
+    .eq(
+      "room_code",
       roomCode
+    )
+    .single();
+
+  if (
+    roomError ||
+    !roomData
+  ) {
+    console.error(
+      "Erro ao carregar sala:",
+      roomError
     );
 
-    if (
-      roomData.status ===
-      "ao_vivo"
-    ) {
-
-      router.push(
-        `/tv/${roomCode}`
-      );
-
-      return;
-    }
-
-    const {
-      data: lastFinishedEvent,
-      error: eventError,
-    } = await supabase
-      .from("events")
-      .select("*")
-      .eq(
-        "room_code",
-        roomCode
-      )
-      .eq(
-        "status",
-        "finished"
-      )
-      .order(
-        "ended_at",
-        {
-          ascending: false,
-        }
-      )
-      .limit(1)
-      .maybeSingle();
-
-    if (eventError) {
-
-      console.error(
-        "Erro ao carregar evento:",
-        eventError
-      );
-
-      setErrorMessage(
-        "Não foi possível carregar o evento encerrado."
-      );
-
-      setLoading(false);
-
-      return;
-    }
-
-    if (!lastFinishedEvent) {
-
-      setLatest(null);
-      setHistory([]);
-
-      setErrorMessage(
-        "Nenhum evento encerrado foi encontrado para esta sala."
-      );
-
-      setLoading(false);
-
-      return;
-    }
-
-    const {
-      data: latestAward,
-      error: latestAwardError,
-    } = await supabase
-      .from("hall_of_fame")
-      .select("*")
-      .eq(
-        "room_code",*        roomCode
-      )
-      .eq*
-        "event_id",
-        lastF*nishedEvent.id
-      )
-      .orde*(
-        "created_at",
-        {
-*         ascending: false,
-        }
-      )
-      .limit(1)
-      .maybeSingle();
-
-    if (latestAwardError) {
-
-      console.error(
-        "Erro ao carregar premiação:",
-        latestAwardError
-      );
-
-      setErrorMessage(
-        "Não foi possível carregar a premiação."
-      );
-
-      setLoading(false);
-
-      return;
-    }
-
-    setLatest(
-      latestAward || null
+    setErrorMessage(
+      "Sala não encontrada."
     );
-
-    const {
-      data: historyData,
-      error: historyError,
-    } = await supabase
-      .from("hall_of_fame")
-      .select("*")
-      .eq(
-        "room_code",
-        roomCode
-      )
-      .order(
-        "created_at",
-        {
-          ascending: false,
-        }
-      );
-
-    if (historyError) {
-
-      console.error(
-        "Erro ao carregar histórico:",
-        historyError
-      );
-
-      setHistory([]);
-
-    } else {
-
-      setHistory(
-        historyData || []
-      );
-
-    }
 
     setLoading(false);
+    return;
   }
 
+  setRoomName(
+    roomData.room_name ||
+    roomCode
+  );
+
+  if (
+    roomData.status ===
+    "ao_vivo"
+  ) {
+    router.push(
+      `/tv/${roomCode}`
+    );
+    return;
+  }
+
+  const {
+    data: lastFinishedEvent,
+    error: eventError,
+  } = await supabase
+    .from("events")
+    .select("*")
+    .eq(
+      "room_code",
+      roomCode
+    )
+    .eq(
+      "status",
+      "finished"
+    )
+    .order(
+      "ended_at",
+      {
+        ascending: false,
+      }
+    )
+    .limit(1)
+    .maybeSingle();
+
+  if (eventError) {
+    console.error(
+      "Erro ao carregar evento:",
+      eventError
+    );
+
+    setErrorMessage(
+      "Não foi possível carregar o evento encerrado."
+    );
+
+    setLoading(false);
+    return;
+  }
+
+  if (!lastFinishedEvent) {
+    setLatest(null);
+    setHistory([]);
+
+    setErrorMessage(
+      "Nenhum evento encerrado foi encontrado para esta sala."
+    );
+
+    setLoading(false);
+    return;
+  }
+
+  const {
+    data: latestAward,
+    error: latestAwardError,
+  } = await supabase
+    .from("hall_of_fame")
+    .select("*")
+    .eq(
+      "room_code",
+      roomCode
+    )
+    .eq(
+      "event_id",
+      lastFinishedEvent.id
+    )
+    .order(
+      "created_at",
+      {
+        ascending: false,
+      }
+    )
+    .limit(1)
+    .maybeSingle();
+
+  if (latestAwardError) {
+    console.error(
+      "Erro ao carregar premiação:",
+      latestAwardError
+    );
+
+    setErrorMessage(
+      "Não foi possível carregar a premiação."
+    );
+
+    setLoading(false);
+    return;
+  }
+
+  setLatest(
+    latestAward || null
+  );
+
+  if (!latestAward) {
+    setErrorMessage(
+      "A premiação deste evento ainda não foi registrada."
+    );
+  }
+
+  const {
+    data: historyData,
+    error: historyError,
+  } = await supabase
+    .from("hall_of_fame")
+    .select("*")
+    .eq(
+      "room_code",
+      roomCode
+    )
+    .order(
+      "created_at",
+      {
+        ascending: false,
+      }
+    );
+
+  if (historyError) {
+    console.error(
+      "Erro ao carregar histórico:",
+      historyError
+    );
+
+    setHistory([]);
+  } else {
+    setHistory(
+      historyData || []
+    );
+  }
+
+  setLoading(false);
+}
   if (loading) {
 
     return (
