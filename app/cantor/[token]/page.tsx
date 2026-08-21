@@ -17,7 +17,8 @@ export default function CantorPage({
   
   const [message, setMessage] = useState("");
   const [position, setPosition] = useState<number | null>(null);
-  const [currentSinger, setCurrentSinger] = useState("");
+  const [currentSinger, setCurrentSinger] =
+     useState<any>(null);
 
   useEffect(() => {
     async function init() {
@@ -127,9 +128,9 @@ export default function CantorPage({
       .single();
 
     if (current) {
-      setCurrentSinger(current.singer_name);
+      setCurrentSinger(current);
     } else {
-      setCurrentSinger("");
+      setCurrentSinger(null);
     }
   }
 
@@ -210,7 +211,8 @@ export default function CantorPage({
         <div className="mt-4 mb-6 p-4 bg-slate-100 rounded">
           <p>
             <strong>🎤 Cantando agora:</strong>{" "}
-            {currentSinger || "Aguardando cantor"}
+            {currentSinger?.singer_name ||
+               "Aguardando cantor"}
           </p>
 
           <p className="mt-2">
