@@ -35,6 +35,12 @@ export default function OperatorPage({
 
   const [currentVotes, setCurrentVotes] =
     useState(0);
+  
+  const [eventEnded, setEventEnded] =
+    useState(false);
+
+  const [endingEvent, setEndingEvent] =
+    useState(false);
 
   useEffect(() => {
     async function init() {
@@ -102,40 +108,78 @@ export default function OperatorPage({
 }, [roomCode]);
 
   async function loadData() {
-    const { data: queueData } =
-      await supabase
-        .from("queue")
-        .select("*")
-        .eq("room_code", roomCode)
-        .order("created_at");
 
-    const { data: current } =
-  await supabase
-    .from("current_singer")
+  const { data: queueData } =
+    await supabase
+      .from("queue")
+      .select("*")
+      .eq(
+        "room_code",
+        roomCode
+      )
+      .order("created_at");
+
+  const { data: current } =
+    await supabase
+      .from("current_singer")
+      .select("*")
+      .eq(
+        "room_code",
+        roomCode
+      )
+      .maybeSingle();
+
+  const {
+    data: room,
+    error: roomError,
+  } = await supabase
+    .from("rooms")
     .select("*")
-    .eq("room_code", roomCode)
+    .eq(
+      "room_code",
+      roomCode
+    )
     .single();
 
-    const { data: room } =
-      await supabase
-        .from("rooms")
-        .select("*")
-        .eq("room_code", roomCode)
-        .single();
-
-    if (room) {
-      setRoomName(room.room_name);
-    }
-
-    setCurrentSinger(current);
-setQueue(queueData || []);
-
-if (current?.singer_token) {
-  await loadVotes(
-    current.singer_token
-  );
-}
+  if (roomError) {
+    console.error(
+      "Erro ao carregar sala:",
+      roomError
+    );
   }
+
+  if (room) {
+
+    setRoomName(
+      room.room_name
+    );
+
+    setEventEnded(
+      room.status === "encerrada"
+    );
+  }
+
+  setCurrentSinger(
+    current || null
+  );
+
+  setQueue(
+    queueData || []
+  );
+
+  if (current?.singer_token) {
+
+    await loadVotes(
+      current.singer_token
+    );
+
+  } else {
+
+    setCurrentScore(0);
+    setCurrentVotes(0);
+
+  }
+}
   async function loadVotes(
   singerToken: string
 ) {
@@ -1009,13 +1053,23 @@ if (current?.singer_token) {
       `⭐ ${bestSong.average.toFixed(2)}\n`;
   }
 
-  alert(
-    awardMessage
-  );
+  setEventEnded(true);
+setEndingEvent(false);
 
-  alert(
-    "Evento encerrado com sucesso."
-  );
+alert(
+  awardMessage
+);
+
+alert(
+  "Evento encerrado com sucesso. A TV continuará exibindo a premiação."
+);
+
+window.setTimeout(() => {
+
+  window.location.href =
+    "/dashboard";
+
+}, 1500);
 }
 
   const estimatedMinutes =
@@ -1189,15 +1243,50 @@ if (!authorized) {
           Limpar Fila
         </button>
 
-        <button
-          onClick={endEvent}
-          className="bg-purple-700 hover:bg-purple-800 px-5 py-3 rounded"
-        >
-          🔚 Encerrar Evento
-        </button>
+        {!eventEnded && (
+
+  <button
+    onClick={endEvent}
+    disabled={endingEvent}
+    className={`px-5 py-3 rounded ${
+      endingEvent
+        ? "bg-slate-600 cursor-not-allowed"
+        : "bg-purple-700 hover:bg-purple-800"
+    }`}
+  >
+    {endingEvent
+      ? "⏳ Encerrando..."
+      : "🔚 Encerrar Evento"}
+  </button>
+
+)}
 
       </div>
+     {eventEnded && (
 
+  <div className="bg-purple-900 border border-purple-500 rounded-xl p-6 mb-6 text-center">
+
+    <h2 className="text-2xl font-black mb-2">
+      🏆 Evento Encerrado
+    </h2>
+
+    <p className="text-purple-100">
+      A TV está exibindo a premiação da noite.
+    </p>
+
+    <button
+      onClick={() => {
+        window.location.href =
+          "/dashboard";
+      }}
+      className="mt-4 bg-white text-purple-900 px-5 py-3 rounded font-bold"
+    >
+      Voltar ao Dashboard
+    </button>
+
+  </div>
+
+)}
       <div className="space-y-3">
 
         {queue.length === 0 ? (
