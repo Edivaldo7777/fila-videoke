@@ -144,7 +144,9 @@ async function loadRooms() {
   async function createRoom() {
 
   if (!roomName.trim()) {
-    alert("Informe o nome da sala");
+    alert(
+      "Informe o nome da sala."
+    );
     return;
   }
 
@@ -152,16 +154,40 @@ async function loadRooms() {
     localStorage.getItem("user") || "{}"
   );
 
-  const { count } = await supabase
-    .from("rooms")
-    .select("*", {
-      count: "exact",
-      head: true,
-    })
-    .eq(
-      "owner_id",
-      user.id
+  if (!user?.id) {
+    alert(
+      "Sua sessão não foi encontrada. Faça login novamente."
     );
+
+    window.location.href =
+      "/auth/login";
+
+    return;
+  }
+
+  const { count, error: countError } =
+    await supabase
+      .from("rooms")
+      .select("*", {
+        count: "exact",
+        head: true,
+      })
+      .eq(
+        "owner_id",
+        user.id
+      );
+
+  if (countError) {
+    console.error(
+      "Erro ao contar salas:",
+      countError
+    );
+
+    alert(
+      countError.message
+    );
+    return;
+  }
 
   if (
     user.role !== "admin" &&
@@ -179,24 +205,120 @@ async function loadRooms() {
     .substring(2, 8)
     .toUpperCase();
 
-  const { error } = await supabase
+  const {
+    error: roomError,
+  } = await supabase
     .from("rooms")
     .insert({
       room_code: code,
-      room_name: roomName,
+      room_name:
+        roomName.trim(),
       owner_id: user.id,
       event_mode: eventMode,
+      status: "ao_vivo",
     });
 
-  if (error) {
-    alert(error.message);
+  if (roomError) {
+    console.error(
+      "Erro ao criar sala:",
+      roomError
+    );
+
+    alert(
+      roomError.message
+    );
+    return;
+  }
+
+  const {
+    data: newEvent,
+    error: eventError,
+  } = await supabase
+    .from("events")
+    .insert({
+      room_code: code,
+      status: "running",
+    })
+    .select("id")
+    .single();
+
+  if (
+    eventError ||
+    !newEvent
+  ) {
+    console.error(
+      "Erro ao criar evento:",
+      eventError
+    );
+
+    await supabase
+      .from("rooms")
+      .delete()
+      .eq(
+        "room_code",
+        code
+      );
+
+    alert(
+      `A sala não pôde ser criada porque o evento inicial falhou: ${
+        eventError?.message ||
+        "erro desconhecido"
+      }`
+    );
+
+    return;
+  }
+
+  const {
+    error: updateRoomError,
+  } = await supabase
+    .from("rooms")
+    .update({
+      current_event_id:
+        newEvent.id,
+    })
+    .eq(
+      "room_code",
+      code
+    );
+
+  if (updateRoomError) {
+    console.error(
+      "Erro ao associar evento:",
+      updateRoomError
+    );
+
+    await supabase
+      .from("events")
+      .delete()
+      .eq(
+        "id",
+        newEvent.id
+      );
+
+    await supabase
+      .from("rooms")
+      .delete()
+      .eq(
+        "room_code",
+        code
+      );
+
+    alert(
+      updateRoomError.message
+    );
     return;
   }
 
   setRoomCode(code);
   setRoomName("");
+  setEventMode("traditional");
 
-  loadRooms();
+  alert(
+    "Sala e evento inicial criados com sucesso."
+  );
+
+  await loadRooms();
 }
   
 async function deleteRoom(
