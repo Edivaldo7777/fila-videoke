@@ -24,6 +24,8 @@ export default function CantorPage({
 
   const [voteMessage, setVoteMessage] =
     useState("");
+  const [eventEnded, setEventEnded] =
+    useState(false);
 
   useEffect(() => {
     async function init() {
@@ -35,9 +37,96 @@ export default function CantorPage({
 
   // NOVO USE EFFECT: Com Supabase Realtime para a página do cantor
   useEffect(() => {
-    if (!token) return;
 
-    let channel: any;
+  if (!token) return;
+
+  let channel: any;
+
+  async function initializeSinger() {
+
+    await loadSinger();
+
+    const { data } =
+      await supabase
+        .from("singer_profile")
+        .select("room_code")
+        .eq(
+          "singer_token",
+          token
+        )
+        .maybeSingle();
+
+    if (!data?.room_code) {
+      return;
+    }
+
+    channel = supabase
+      .channel(
+        `singer_updates_${data.room_code}_${token}`
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "queue",
+          filter:
+            `room_code=eq.${data.room_code}`,
+        },
+        () => {
+          loadSinger();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "current_singer",
+          filter:
+            `room_code=eq.${data.room_code}`,
+        },
+        () => {
+          loadSinger();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "rooms",
+          filter:
+            `room_code=eq.${data.room_code}`,
+        },
+        () => {
+          loadSinger();
+        }
+      )
+      .subscribe();
+  }
+
+  initializeSinger();
+
+  const timer = window.setInterval(
+    () => {
+      loadSinger();
+    },
+    5000
+  );
+
+  return () => {
+
+    window.clearInterval(timer);
+
+    if (channel) {
+      supabase.removeChannel(
+        channel
+      );
+    }
+  };
+
+}, [token]);
 
     async function initializeSinger() {
       await loadSinger();
@@ -98,8 +187,24 @@ export default function CantorPage({
       .single();
 
     if (room) {
-      setEventMode(room.event_mode || "traditional");
-    }
+
+  setEventMode(
+    room.event_mode ||
+    "traditional"
+  );
+
+  setEventEnded(
+    room.status === "encerrada"
+  );
+
+  if (
+    room.status === "encerrada"
+  ) {
+    setCurrentSinger(null);
+    setPosition(null);
+    return;
+  }
+}
 
     setNextSong((currentValue) => {
       if (currentValue === "" && data.next_song) {
@@ -391,7 +496,77 @@ export default function CantorPage({
 }
   const singersAhead = position && position > 1 ? position - 1 : 0;
   const estimatedMinutes = singersAhead * 5;
+  if (eventEnded) {
 
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-purple-950 via-slate-950 to-black text-white flex items-center justify-center p-6">
+
+      <div className="w-full max-w-xl bg-white/10 border border-white/20 backdrop-blur-xl rounded-3xl p-8 md:p-12 text-center shadow-2xl">
+
+        <div className="text-8xl mb-6">
+          🎤
+        </div>
+
+        <h1 className="text-4xl md:text-5xl font-black mb-5">
+
+          Obrigado pela sua participação!
+
+        </h1>
+
+        <p className="text-xl text-purple-100 mb-4">
+
+          Foi muito bom ter você cantando com a gente,
+
+          {singerName && (
+            <>
+              {" "}
+              <strong>
+                {singerName}
+              </strong>
+            </>
+          )}
+
+          .
+
+        </p>
+
+        <div className="bg-yellow-400 text-black rounded-2xl p-5 my-7">
+
+          <div className="text-4xl mb-2">
+            🏆
+          </div>
+
+          <p className="font-black text-lg">
+
+            A premiação da noite está sendo exibida na TV.
+
+          </p>
+
+        </div>
+
+        <p className="text-2xl font-bold mb-8">
+
+          Volte sempre! ⭐
+
+        </p>
+
+        <button
+          onClick={() => {
+            window.location.href =
+              "/";
+          }}
+          className="bg-gradient-to-r from-fuchsia-600 to-purple-700 hover:from-fuchsia-500 hover:to-purple-600 text-white px-8 py-4 rounded-xl font-black text-lg"
+        >
+
+          🏠 Voltar ao início
+
+        </button>
+
+      </div>
+
+    </main>
+  );
+}
   return (
     <main className="min-h-screen bg-slate-100 p-8">
       <div className="max-w-xl mx-auto bg-white rounded shadow p-6">
