@@ -156,6 +156,23 @@ export default function CantorPage({
     );
 
     if (!confirmed) return;
+    if (
+  position === 1
+) {
+  alert(
+    "Você é o próximo da fila e não pode sair agora."
+  );
+  return;
+}
+    if (
+  currentSinger?.singer_token ===
+  token
+) {
+  alert(
+    "Você está se apresentando neste momento."
+  );
+  return;
+}
 
     const voterToken = crypto.randomUUID();
 
