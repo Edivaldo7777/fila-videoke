@@ -28,6 +28,9 @@ export default function JuradoPage({
   
   const [eventMode, setEventMode] =
     useState("traditional");
+  
+  const [eventEnded, setEventEnded] =
+    useState(false);
 
   useEffect(() => {
     async function init() {
@@ -90,15 +93,98 @@ export default function JuradoPage({
   }, [roomCode]);
 
   async function loadCurrentSinger() {
-    const { data } =
-      await supabase
-        .from("current_singer")
-        .select("*")
-        .eq("room_code", roomCode)
-        .single();
 
-    setCurrentSinger(data);
+  if (!roomCode) {
+    setCurrentSinger(null);
+    return;
   }
+
+  const {
+    data: room,
+    error: roomError,
+  } = await supabase
+    .from("rooms")
+    .select(
+      "current_event_id, status"
+    )
+    .eq(
+      "room_code",
+      roomCode
+    )
+    .single();
+
+  if (
+    roomError ||
+    !room
+  ) {
+    console.error(
+      "Erro ao carregar sala:",
+      roomError
+    );
+
+    setCurrentSinger(null);
+    return;
+  }
+
+  const ended =
+    room.status === "encerrada";
+
+  setEventEnded(
+    ended
+  );
+
+  if (ended) {
+    setCurrentSinger(null);
+    setScore(0);
+    setMessage("");
+    return;
+  }
+
+  const eventId =
+    room.current_event_id;
+
+  if (!eventId) {
+    setCurrentSinger(null);
+    setScore(0);
+    setMessage("");
+    return;
+  }
+
+  const {
+    data: current,
+    error: currentError,
+  } = await supabase
+    .from("current_singer")
+    .select("*")
+    .eq(
+      "room_code",
+      roomCode
+    )
+    .eq(
+      "event_id",
+      eventId
+    )
+    .maybeSingle();
+
+  if (currentError) {
+    console.error(
+      "Erro ao carregar cantor atual:",
+      currentError
+    );
+
+    setCurrentSinger(null);
+    return;
+  }
+
+  setCurrentSinger(
+    current || null
+  );
+
+  if (!current) {
+    setScore(0);
+    setMessage("");
+  }
+}
 
   async function vote() {
 
@@ -353,6 +439,79 @@ export default function JuradoPage({
   window.location.href =
     `/cantor/${token}`;
 }
+
+if (eventEnded) {
+
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-yellow-700 via-purple-950 to-slate-950 text-white flex items-center justify-center p-6">
+
+      <div className="w-full max-w-xl bg-white/10 border border-white/20 backdrop-blur-xl rounded-3xl p-8 md:p-12 text-center shadow-2xl">
+
+        <div className="text-8xl mb-6">
+          ⭐
+        </div>
+
+        <h1 className="text-4xl md:text-5xl font-black mb-5">
+
+          Obrigado pelos seus votos!
+
+        </h1>
+
+        <p className="text-xl text-yellow-100 mb-4">
+
+          Sua participação ajudou a tornar este evento ainda mais especial
+
+          {voterName && (
+            <>
+              {", "}
+              <strong>
+                {voterName}
+              </strong>
+            </>
+          )}
+
+          .
+
+        </p>
+
+        <div className="bg-yellow-400 text-black rounded-2xl p-5 my-7 shadow-xl">
+
+          <div className="text-5xl mb-3">
+            🏆
+          </div>
+
+          <p className="font-black text-xl">
+
+            A premiação da noite está sendo exibida na TV.
+
+          </p>
+
+        </div>
+
+        <p className="text-2xl font-bold mb-8">
+
+          Volte sempre! 🎤⭐
+
+        </p>
+
+        <button
+          onClick={() => {
+            window.location.href =
+              "/";
+          }}
+          className="bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-400 hover:to-orange-500 text-black px-8 py-4 rounded-xl font-black text-lg"
+        >
+
+          🏠 Voltar ao início
+
+        </button>
+
+      </div>
+
+    </main>
+  );
+}
+
   return (
     <main className="min-h-screen bg-slate-950 text-white p-8">
 
