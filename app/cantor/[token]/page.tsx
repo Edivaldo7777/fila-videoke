@@ -343,15 +343,26 @@ export default function CantorPage({
     await supabase
       .from("singer_votes")
       .insert({
-        room_code: roomCode,
-        singer_token:
-          currentSinger.singer_token,
-        voter_token: token,
-        voter_type: "singer",
-        performance_id:
-          performance.id,
-        score: voteScore,
-      });
+  room_code: roomCode,
+
+  event_id:
+    performance.event_id,
+
+  performance_id:
+    performance.id,
+
+  singer_token:
+    currentSinger.singer_token,
+
+  voter_token:
+    token,
+
+  voter_type:
+    "singer",
+
+  score:
+    voteScore,
+});
 
   if (error) {
     console.error(
