@@ -274,80 +274,81 @@ export default function CantorPage({
     .select("*")
     .eq(
       "room_code",
-   *  roomCode
+      roomCode
     )
     .eq(
-      "s*nger_token",
-      currentSinger.s*nger_token
+      "singer_token",
+      currentSinger.singer_token
     )
     .order(
-     *"created_at",
+      "created_at",
       {
-        asce*ding: false,
+        ascending: false,
       }
     )
-    .li*it(1)
+    .limit(1)
     .maybeSingle();
 
   if (
-*   performanceError ||
-    !perfor*ance
+    performanceError ||
+    !performance
   ) {
     console.error(
-    * "Erro ao localizar apresentação:"*
+      "Erro ao localizar apresentação:",
       performanceError
     );
 
-  * setVoteMessage(
-      "A apresent*ção atual ainda não foi registrada*"
+    setVoteMessage(
+      "A apresentação atual ainda não foi registrada."
     );
     return;
   }
 
-  const *
+  const {
     data: existingVote,
-    error* existingVoteError,
-  } = await su*abase
+    error: existingVoteError,
+  } = await supabase
     .from("singer_votes")
-  * .select("id")
+    .select("id")
     .eq(
-      "per*ormance_id",
+      "performance_id",
       performance.id
-*   )
-    .eq(
-      "voter_token",*      token
     )
-    .maybeSingle*);
+    .eq(
+      "voter_token",
+      token
+    )
+    .maybeSingle();
 
   if (existingVoteError) {
-   *console.error(
-      "Erro ao veri*icar voto:",
-      existingVoteErr*r
+    console.error(
+      "Erro ao verificar voto:",
+      existingVoteError
     );
 
     setVoteMessage(
-    * "Não foi possível verificar seu v*to."
+      "Não foi possível verificar seu voto."
     );
     return;
   }
 
-  if *existingVote) {
-    setVoteMessage*
-      "Você já votou nesta aprese*tação."
+  if (existingVote) {
+    setVoteMessage(
+      "Você já votou nesta apresentação."
     );
     return;
   }
 
-  *onst { error } =
-    await supabas*
+  const { error } =
+    await supabase
       .from("singer_votes")
-     *.insert({
-        room_code: roomC*de,
+      .insert({
+        room_code: roomCode,
         singer_token:
-        * currentSinger.singer_token,
-     *  voter_token: token,
-        vote*_type: "singer",
-        performan*e_id:
+          currentSinger.singer_token,
+        voter_token: token,
+        voter_type: "singer",
+        performance_id:
           performance.id,
         score: voteScore,
       });
