@@ -45,7 +45,6 @@ export default function TvPage({
     init();
   }, [params]);
 
-  // Validação de acesso e Supabase Realtime para a TV
   useEffect(() => {
     if (!roomCode) return;
 
@@ -74,7 +73,6 @@ export default function TvPage({
 
         await loadData();
 
-        // Relógio da TV (atualiza a cada 1 segundo)
         clockTimer = setInterval(() => {
           const now = new Date();
           setClock(
@@ -85,7 +83,6 @@ export default function TvPage({
           );
         }, 1000);
 
-        // Supabase Realtime para atualizar a TV instantaneamente sem setInterval
         channel = supabase
           .channel("tv_room_updates")
           .on(
@@ -236,10 +233,7 @@ export default function TvPage({
       .eq("room_code", roomCode)
       .single();
 
-    if (roomError || !room) {
-      console.error("Erro ao carregar sala:", roomError);
-      return;
-    }
+    if (roomError || !room) return;
 
     if (room.room_name) {
       setRoomName(room.room_name);
@@ -302,7 +296,7 @@ export default function TvPage({
 
   if (checkingAccess) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
+      <main className="h-screen flex items-center justify-center bg-slate-950 text-white">
         Verificando acesso...
       </main>
     );
@@ -310,9 +304,9 @@ export default function TvPage({
 
   if (!authorized) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
+      <main className="h-screen flex items-center justify-center bg-slate-950 text-white">
         <div className="text-center">
-          <h1 className="text-4xl font-black mb-4">🔒 ACESSO NEGADO</h1>
+          <h1 className="text-3xl font-black mb-2">🔒 ACESSO NEGADO</h1>
           <p>Você não é proprietário desta sala.</p>
         </div>
       </main>
@@ -320,131 +314,115 @@ export default function TvPage({
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black text-white p-10">
-      <div className="flex justify-between items-center mb-8">
+    <main className="h-screen w-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black text-white p-4 overflow-hidden flex flex-col justify-between">
+      
+      {/* Topo Compacto */}
+      <div className="flex justify-between items-center bg-slate-900/60 border border-slate-800 px-6 py-3 rounded-2xl">
         <div>
-          <h1 className="text-6xl font-black">🎤 {roomName}</h1>
-          <div className="text-slate-400 mt-2">
-            <p>Sala {roomCode}</p>
-            {currentEventId && (
-              <p className="text-xs mt-1">Evento: {currentEventId.slice(0, 8)}</p>
+          <h1 className="text-2xl font-black tracking-wide">🎤 {roomName}</h1>
+          <p className="text-xs text-slate-400">Sala: {roomCode}</p>
+        </div>
+        <div className="text-3xl font-black text-yellow-400">{clock}</div>
+      </div>
+
+      {/* Conteúdo Principal em Grid Otimizado para Monitor */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 my-2 flex-1">
+        
+        {/* Coluna Esquerda: Cantor Atual + Preparando */}
+        <div className="md:col-span-7 flex flex-col gap-4 justify-between">
+          
+          {/* Card: Cantando Agora */}
+          <div className="bg-yellow-400 text-black rounded-3xl p-6 shadow-xl flex-1 flex flex-col justify-center">
+            <h2 className="text-xs font-black tracking-widest uppercase opacity-80 mb-1">🎤 Cantando Agora</h2>
+            <div className="text-4xl md:text-5xl font-black truncate mb-1">
+              {currentSinger?.singer_name || "AGUARDANDO"}
+            </div>
+            <div className="text-xl font-bold opacity-90 truncate mb-4">
+              🎵 {currentSinger?.song_name || "Nenhuma música informada"}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white/80 backdrop-blur rounded-xl p-3 text-center">
+                <div className="text-xs font-bold text-slate-600">NOTA MÉDIA</div>
+                <div className="text-3xl font-black">{currentScore.toFixed(1)}</div>
+              </div>
+              <div className="bg-white/80 backdrop-blur rounded-xl p-3 text-center">
+                <div className="text-xs font-bold text-slate-600">VOTOS</div>
+                <div className="text-3xl font-black">{currentVotes}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card: Próximo / Prepare-se */}
+          <div className="bg-orange-600 rounded-2xl px-6 py-4 shadow-lg flex items-center justify-between">
+            <div>
+              <span className="text-xs font-black tracking-wider uppercase opacity-90">🚨 Próximo da Fila</span>
+              <div className="text-2xl font-black truncate">
+                {nextSinger ? nextSinger.singer_name : "Nenhum na fila"}
+              </div>
+              <div className="text-sm opacity-90 truncate">
+                {nextSinger ? `🎵 ${nextSinger.song_name}` : "Aguardando inscrições"}
+              </div>
+            </div>
+            <div className="text-right hidden sm:block">
+              <span className="text-xs opacity-80 block">Fila Total</span>
+              <span className="text-3xl font-black">{queue.length}</span>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Coluna Direita: Top Ranking e QR Code */}
+        <div className="md:col-span-5 flex flex-col gap-4 justify-between">
+          
+          {/* Card: Top 3 */}
+          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl flex-1">
+            <h2 className="text-lg font-black mb-3 text-center text-yellow-400">🏆 TOP 3 DA NOITE</h2>
+            {topRanking.length === 0 ? (
+              <div className="text-center text-slate-500 text-sm py-6">
+                Nenhum voto registrado ainda.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {topRanking.map((item, index) => (
+                  <div
+                    key={index}
+                    className="bg-slate-800/80 rounded-xl px-4 py-2.5 flex justify-between items-center text-sm"
+                  >
+                    <div className="font-bold truncate pr-2">
+                      {index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"} {item.singer_name}
+                    </div>
+                    <div className="text-yellow-400 font-black shrink-0">
+                      ⭐ {item.average.toFixed(1)} <span className="text-xs text-slate-400 font-normal">({item.votes})</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
-        </div>
-        <div className="text-5xl font-black text-yellow-400">{clock}</div>
-      </div>
 
-      <div className="bg-yellow-400 text-black rounded-3xl p-8 mb-8 shadow-2xl">
-        <h2 className="text-3xl font-black mb-4">🎤 AGORA CANTANDO</h2>
-        <div className="text-7xl font-black mb-3">
-          {currentSinger?.singer_name || "AGUARDANDO"}
-        </div>
-        <div className="text-3xl mb-6">
-          🎵 {currentSinger?.song_name || "Nenhuma música"}
-        </div>
-
-        <div className="grid grid-cols-2 gap-6">
-          <div className="bg-white rounded-2xl p-4 text-center">
-            <div className="text-lg font-bold">⭐ NOTA MÉDIA</div>
-            <div className="text-5xl font-black">{currentScore.toFixed(1)}</div>
-          </div>
-          <div className="bg-white rounded-2xl p-4 text-center">
-            <div className="text-lg font-bold">👥 VOTOS</div>
-            <div className="text-5xl font-black">{currentVotes}</div>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-orange-500 rounded-3xl p-8 mb-8 text-white shadow-xl">
-        <h2 className="text-3xl font-black mb-4">🚨 PREPARE-SE</h2>
-        {nextSinger ? (
-          <>
-            <div className="text-5xl font-black">{nextSinger.singer_name}</div>
-            <div className="text-2xl mt-3">🎵 {nextSinger.song_name}</div>
-          </>
-        ) : (
-          <div className="text-2xl">Nenhum cantor aguardando.</div>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-slate-800 rounded-2xl p-6 text-center">
-          <div className="text-5xl mb-2">👥</div>
-          <div className="text-4xl font-black">{queue.length}</div>
-          <div className="text-slate-400">Na fila</div>
-        </div>
-        <div className="bg-slate-800 rounded-2xl p-6 text-center">
-          <div className="text-5xl mb-2">⏳</div>
-          <div className="text-4xl font-black">{queue.length * 5}</div>
-          <div className="text-slate-400">Minutos de espera</div>
-        </div>
-        <div className="bg-slate-800 rounded-2xl p-6 text-center">
-          <div className="text-5xl mb-2">🎵</div>
-          <div className="text-4xl font-black">{queue.length}</div>
-          <div className="text-slate-400">Próximas músicas</div>
-        </div>
-      </div>
-
-      <div className="bg-slate-800 rounded-3xl p-6 mb-8">
-        <h2 className="text-4xl font-black mb-6 text-center">🏆 TOP 3 DA NOITE</h2>
-        {topRanking.length === 0 ? (
-          <div className="text-center text-slate-400 text-xl">
-            Nenhum voto registrado.
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {topRanking.map((item, index) => (
-              <div
-                key={index}
-                className="bg-slate-700 rounded-xl p-4 flex justify-between items-center"
-              >
-                <div className="text-3xl font-black">
-                  {index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"} {item.singer_name}
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-black text-yellow-400">
-                    ⭐ {item.average.toFixed(1)}
-                  </div>
-                  <div className="text-slate-300">{item.votes} voto(s)</div>
-                </div>
+          {/* Card: QR Code Compacto */}
+          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl flex items-center gap-4 justify-center">
+            {roomUrl && (
+              <div className="bg-white p-2 rounded-xl shrink-0">
+                <QRCode value={roomUrl} size={90} />
               </div>
-            ))}
+            )}
+            <div className="text-left">
+              <h3 className="font-bold text-sm text-yellow-400">📱 ENTRE NA FILA</h3>
+              <p className="text-xs text-slate-400 mt-0.5">Escaneie com a câmera do celular para participar</p>
+            </div>
           </div>
-        )}
-      </div>
 
-      <div className="grid md:grid-cols-2 gap-8">
-        <div className="bg-slate-800 rounded-3xl p-6">
-          <h2 className="text-3xl font-bold mb-6">🎤 Próximos Cantores</h2>
-          {queue.length === 0 ? (
-            <p className="text-slate-400">Nenhum cantor aguardando.</p>
-          ) : (
-            <div className="space-y-4">
-              {queue.slice(0, 5).map((item, index) => (
-                <div key={item.id} className="bg-slate-700 rounded-xl p-4">
-                  <div className="font-bold text-2xl">
-                    #{index + 1} {item.singer_name}
-                  </div>
-                  <div className="text-slate-300">🎵 {item.song_name}</div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
-        <div className="bg-slate-800 rounded-3xl p-6 text-center">
-          <h2 className="text-3xl font-bold mb-4">📱 ENTRE NA FILA</h2>
-          {roomUrl && (
-            <div className="bg-white inline-block p-5 rounded-xl">
-              <QRCode value={roomUrl} size={280} />
-            </div>
-          )}
-          <p className="mt-5 text-lg text-slate-300">
-            Escaneie o QR Code para participar
-          </p>
-          <p className="text-slate-500 break-all mt-3">{roomUrl}</p>
-        </div>
       </div>
+
+      {/* Rodapé Compacto */}
+      <footer className="text-center text-xs text-slate-500 pb-1">
+        Fila Videokê — Sistema de Gerenciamento Profissional em Tempo Real
+      </footer>
+
     </main>
   );
 }
