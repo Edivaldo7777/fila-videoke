@@ -20,6 +20,7 @@ export default function TvPage({
 
   const [roomCode, setRoomCode] = useState("");
   const [roomName, setRoomName] = useState("VIDEOKÊ");
+  const [votingMode, setVotingMode] = useState("stars"); // Novo estado para o modo de voto
   const [roomUrl, setRoomUrl] = useState("");
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [currentSinger, setCurrentSinger] = useState<any>(null);
@@ -65,6 +66,7 @@ export default function TvPage({
         return;
       }
 
+      setVotingMode(room.voting_mode || "stars");
       setCheckingAccess(false);
 
       if (user.role === "admin" || room.owner_id === user.id) {
@@ -238,6 +240,7 @@ export default function TvPage({
     if (room.room_name) {
       setRoomName(room.room_name);
     }
+    setVotingMode(room.voting_mode || "stars");
 
     const eventId = room.current_event_id;
     setCurrentEventId(eventId || null);
@@ -292,6 +295,13 @@ export default function TvPage({
     await loadRanking(eventId);
   }
 
+  function getPerformanceMessage(score: number) {
+    if (score >= 95) return "🎉 Nota 100! Parabéns, você é um grande cantor!";
+    if (score >= 75) return `⭐ Nota ${Math.round(score)}! Está quase um profissional.`;
+    if (score >= 50) return `🎤 Nota ${Math.round(score)}! Tem que melhorar um pouco mais.`;
+    return `💪 Nota ${Math.round(score)}! Continue tentando até ficar um bom cantor.`;
+  }
+
   const nextSinger = queue.length > 0 ? queue[0] : null;
 
   if (checkingAccess) {
@@ -343,14 +353,24 @@ export default function TvPage({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-white/80 backdrop-blur rounded-xl p-3 text-center">
-                <div className="text-xs font-bold text-slate-600">NOTA MÉDIA</div>
-                <div className="text-3xl font-black">{currentScore.toFixed(1)}</div>
+                <div className="text-xs font-bold text-slate-600">
+                  {votingMode === "thumbs" ? "APROVAÇÃO MÉDIA" : "NOTA MÉDIA"}
+                </div>
+                <div className="text-3xl font-black">
+                  {votingMode === "thumbs" ? `👍 ${currentScore.toFixed(0)}%` : `⭐ ${currentScore.toFixed(1)}`}
+                </div>
               </div>
               <div className="bg-white/80 backdrop-blur rounded-xl p-3 text-center">
                 <div className="text-xs font-bold text-slate-600">VOTOS</div>
                 <div className="text-3xl font-black">{currentVotes}</div>
               </div>
             </div>
+
+            {votingMode === "thumbs" && currentVotes > 0 && (
+              <div className="mt-3 bg-black text-white p-2.5 rounded-xl text-center font-bold text-sm">
+                {getPerformanceMessage(currentScore)}
+              </div>
+            )}
           </div>
 
           {/* Card: Próximo / Prepare-se */}
@@ -393,7 +413,7 @@ export default function TvPage({
                       {index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"} {item.singer_name}
                     </div>
                     <div className="text-yellow-400 font-black shrink-0">
-                      ⭐ {item.average.toFixed(1)} <span className="text-xs text-slate-400 font-normal">({item.votes})</span>
+                      {votingMode === "thumbs" ? `👍 ${item.average.toFixed(0)}%` : `⭐ ${item.average.toFixed(1)}`} <span className="text-xs text-slate-400 font-normal">({item.votes})</span>
                     </div>
                   </div>
                 ))}
