@@ -15,6 +15,7 @@ export default function JuradoPage({
   const [score, setScore] = useState<number>(0);
   const [message, setMessage] = useState("");
   const [eventMode, setEventMode] = useState("traditional");
+  const [eventEnded, setEventEnded] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -46,7 +47,7 @@ export default function JuradoPage({
     init();
   }, [params]);
 
-  // NOVO USE EFFECT: Com Supabase Realtime para a página do jurado
+  // Supabase Realtime para manter o jurado sincronizado sem sobrecarregar o banco
   useEffect(() => {
     if (!roomCode) return;
 
@@ -55,7 +56,6 @@ export default function JuradoPage({
     async function initializeJuror() {
       await loadCurrentSinger();
 
-      // Inscreve no canal para escutar alterações em tempo real no cantor atual desta sala
       channel = supabase
         .channel("juror_room_updates")
         .on(
@@ -63,12 +63,16 @@ export default function JuradoPage({
           { event: "*", schema: "public", table: "current_singer", filter: `room_code=eq.${roomCode}` },
           () => loadCurrentSinger()
         )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "rooms", filter: `room_code=eq.${roomCode}` },
+          () => loadCurrentSinger()
+        )
         .subscribe();
     }
 
     initializeJuror();
 
-    // Limpeza ao sair da página
     return () => {
       if (channel) {
         supabase.removeChannel(channel);
@@ -77,13 +81,61 @@ export default function JuradoPage({
   }, [roomCode]);
 
   async function loadCurrentSinger() {
-    const { data } = await supabase
-      .from("current_singer")
-      .select("*")
+    if (!roomCode) {
+      setCurrentSinger(null);
+      return;
+    }
+
+    const { data: room, error: roomError } = await supabase
+      .from("rooms")
+      .select("current_event_id, status")
       .eq("room_code", roomCode)
       .single();
 
-    setCurrentSinger(data);
+    if (roomError || !room) {
+      console.error("Erro ao carregar sala:", roomError);
+      setCurrentSinger(null);
+      return;
+    }
+
+    const ended = room.status === "encerrada";
+    setEventEnded(ended);
+
+    if (ended) {
+      setCurrentSinger(null);
+      setScore(0);
+      setMessage("");
+      return;
+    }
+
+    const eventId = room.current_event_id;
+
+    if (!eventId) {
+      setCurrentSinger(null);
+      setScore(0);
+      setMessage("");
+      return;
+    }
+
+    const { data: current, error: currentError } = await supabase
+      .from("current_singer")
+      .select("*")
+      .eq("room_code", roomCode)
+      .eq("event_id", eventId)
+      .maybeSingle();
+
+    if (currentError) {
+      console.error("Erro ao carregar cantor atual:", currentError);
+      setCurrentSinger(null);
+      return;
+    }
+
+    setCurrentSinger(current || null);
+
+    if (!current) {
+      setScore(0);
+      setMessage("");
+    }
   }
 
   async function vote() {
@@ -100,54 +152,84 @@ export default function JuradoPage({
         return;
       }
 
-      const { data: profile, error: profileError } = await supabase
-        .from("singer_profile")
+      if (!currentSinger.singer_token) {
+        setMessage("Não foi possível identificar o cantor atual.");
+        return;
+      }
+
+      const { data: performance, error: performanceError } = await supabase
+        .from("performances")
         .select("*")
-        .eq("singer_name", currentSinger.singer_name)
         .eq("room_code", roomCode)
-        .single();
+        .eq("singer_token", currentSinger.singer_token)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      if (profileError) {
-        console.error(profileError);
-        setMessage(profileError.message);
+      if (performanceError || !performance) {
+        console.error("Erro ao localizar apresentação:", performanceError);
+        setMessage("A apresentação atual ainda não foi registrada.");
         return;
       }
 
-      if (!profile) {
-        setMessage("Cantor não encontrado.");
+      const { data: existingVote, error: existingVoteError } = await supabase
+        .from("singer_votes")
+        .select("id")
+        .eq("performance_id", performance.id)
+        .eq("voter_token", voterToken)
+        .maybeSingle();
+
+      if (existingVoteError) {
+        console.error("Erro ao verificar voto:", existingVoteError);
+        setMessage("Não foi possível verificar seu voto.");
         return;
       }
 
-      const result = await supabase.from("singer_votes").insert({
+      if (existingVote) {
+        setMessage("Você já votou nesta apresentação.");
+        return;
+      }
+
+      const { error: voteError } = await supabase.from("singer_votes").insert({
         room_code: roomCode,
-        singer_token: profile.singer_token,
+        event_id: performance.event_id,
+        performance_id: performance.id,
+        singer_token: currentSinger.singer_token,
         voter_token: voterToken,
+        voter_type: "juror",
         score,
       });
 
-      if (result.error) {
-        console.error(result.error);
-        setMessage(result.error.message);
+      if (voteError) {
+        console.error("Erro ao registrar voto:", voteError);
+        if (voteError.code === "23505") {
+          setMessage("Você já votou nesta apresentação.");
+          return;
+        }
+        setMessage(voteError.message);
         return;
       }
 
       setMessage("✅ Voto registrado com sucesso.");
+      setScore(0);
     } catch (error: any) {
-      console.error(error);
+      console.error("Erro inesperado ao votar:", error);
       setMessage(error?.message || "Erro inesperado ao votar.");
     }
   }
 
   async function becomeSinger() {
-    const confirmed = confirm(
-      "Você será colocado no final da fila. Deseja continuar?"
-    );
+    if (eventMode !== "interactive") {
+      alert("A troca de participação não está disponível no modo tradicional.");
+      return;
+    }
 
+    const confirmed = confirm("Você será colocado no final da fila. Deseja continuar?");
     if (!confirmed) return;
 
     const token = crypto.randomUUID();
 
-    await supabase.from("singer_profile").insert({
+    const { error: profileError } = await supabase.from("singer_profile").insert({
       singer_token: token,
       singer_name: voterName,
       room_code: roomCode,
@@ -155,22 +237,78 @@ export default function JuradoPage({
       next_song: "Escolherá na hora de cantar",
     });
 
-    await supabase.from("queue").insert({
+    if (profileError) {
+      alert(profileError.message);
+      return;
+    }
+
+    const { error: queueError } = await supabase.from("queue").insert({
       room_code: roomCode,
       singer_name: voterName,
       song_name: "Escolherá na hora de cantar",
       singer_token: token,
     });
 
-    await supabase.from("voters").delete().eq("voter_token", voterToken);
+    if (queueError) {
+      await supabase.from("singer_profile").delete().eq("singer_token", token);
+      alert(queueError.message);
+      return;
+    }
+
+    const { error: voterError } = await supabase
+      .from("voters")
+      .delete()
+      .eq("voter_token", voterToken);
+
+    if (voterError) {
+      alert(voterError.message);
+      return;
+    }
 
     window.location.href = `/cantor/${token}`;
+  }
+
+  if (eventEnded) {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-yellow-700 via-purple-950 to-slate-950 text-white flex items-center justify-center p-6">
+        <div className="w-full max-w-xl bg-white/10 border border-white/20 backdrop-blur-xl rounded-3xl p-8 md:p-12 text-center shadow-2xl">
+          <div className="text-8xl mb-6">⭐</div>
+          <h1 className="text-4xl md:text-5xl font-black mb-5">
+            Obrigado pelos seus votos!
+          </h1>
+          <p className="text-xl text-yellow-100 mb-4">
+            Sua participação ajudou a tornar este evento ainda mais especial
+            {voterName && (
+              <>
+                {", "}
+                <strong>{voterName}</strong>
+              </>
+            )}
+            .
+          </p>
+          <div className="bg-yellow-400 text-black rounded-2xl p-5 my-7 shadow-xl">
+            <div className="text-5xl mb-3">🏆</div>
+            <p className="font-black text-xl">
+              A premiação da noite está sendo exibida na TV.
+            </p>
+          </div>
+          <p className="text-2xl font-bold mb-8">Volte sempre! 🎤⭐</p>
+          <button
+            onClick={() => {
+              window.location.href = "/";
+            }}
+            className="bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-400 hover:to-orange-500 text-black px-8 py-4 rounded-xl font-black text-lg"
+          >
+            🏠 Voltar ao início
+          </button>
+        </div>
+      </main>
+    );
   }
 
   return (
     <main className="min-h-screen bg-slate-950 text-white p-8">
       <div className="max-w-xl mx-auto">
-
         <h1 className="text-5xl font-black mb-2">⭐ Área do Jurado</h1>
         <p className="text-slate-400 mb-8">Bem-vindo {voterName}</p>
 
@@ -231,7 +369,6 @@ export default function JuradoPage({
             </div>
           )}
         </div>
-
       </div>
     </main>
   );

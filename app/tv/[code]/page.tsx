@@ -49,6 +49,9 @@ export default function TvPage({
   const [eventStatus, setEventStatus] =
     useState("running");
   
+  const [currentEventId, setCurrentEventId] =
+  useState<string | null>(null);
+
   const [authorized, setAuthorized] =
     useState(false);
 
@@ -143,70 +146,127 @@ export default function TvPage({
 }, [roomCode]);
 
   async function loadVotes(
-    singerToken: string
+  singerToken: string,
+  eventId: string
+) {
+
+  const {
+    data: performance,
+    error: performanceError,
+  } = await supabase
+    .from("performances")
+    .select("id")
+    .eq(
+      "room_code",
+      roomCode
+    )
+    .eq(
+      "event_id",
+      eventId
+    )
+    .eq(
+      "singer_token",
+      singerToken
+    )
+    .order(
+      "created_at",
+      {
+        ascending: false,
+      }
+    )
+    .limit(1)
+    .maybeSingle();
+
+  if (
+    performanceError ||
+    !performance
   ) {
-    const { data: performances } =
-  await supabase
+
+    console.error(
+      "Erro ao localizar apresentação atual:",
+      performanceError
+    );
+
+    setCurrentScore(0);
+    setCurrentVotes(0);
+    return;
+  }
+
+  const {
+    data: votes,
+    error: votesError,
+  } = await supabase
+    .from("singer_votes")
+    .select("score")
+    .eq(
+      "room_code",
+      roomCode
+    )
+    .eq(
+      "event_id",
+      eventId
+    )
+    .eq(
+      "performance_id",
+      performance.id
+    );
+
+  if (
+    votesError ||
+    !votes ||
+    votes.length === 0
+  ) {
+
+    if (votesError) {
+      console.error(
+        "Erro ao carregar votos:",
+        votesError
+      );
+    }
+
+    setCurrentScore(0);
+    setCurrentVotes(0);
+    return;
+  }
+
+  const total = votes.reduce(
+    (
+      sum: number,
+      vote: any
+    ) =>
+      sum + Number(vote.score),
+    0
+  );
+
+  setCurrentVotes(
+    votes.length
+  );
+
+  setCurrentScore(
+    total / votes.length
+  );
+}
+    async function loadRanking(
+  eventId: string
+) {
+
+  const {
+    data: performances,
+    error: performancesError,
+  } = await supabase
     .from("performances")
     .select("*")
     .eq(
       "room_code",
       roomCode
+    )
+    .eq(
+      "event_id",
+      eventId
     );
-
-if (
-  !performances ||
-  performances.length === 0
-) {
-  setTopRanking([]);
-  return;
-}
-
-const singerTokens =
-  performances.map(
-    (p: any) =>
-      p.singer_token
-  );
-
-const { data: votes } =
-  await supabase
-    .from("singer_votes")
-    .select("*")
-    .in(
-      "singer_token",
-      singerTokens
-    );
-
-    if (!votes || votes.length === 0) {
-      setCurrentScore(0);
-      setCurrentVotes(0);
-      return;
-    }
-
-    const total = votes.reduce(
-      (sum: number, vote: any) =>
-        sum + Number(vote.score),
-      0
-    );
-
-    setCurrentVotes(votes.length);
-
-    setCurrentScore(
-      total / votes.length
-    );
-  }
-    async function loadRanking() {
-
-  const { data: performances } =
-    await supabase
-      .from("performances")
-      .select("*")
-      .eq(
-        "room_code",
-        roomCode
-      );
 
   if (
+    performancesError ||
     !performances ||
     performances.length === 0
   ) {
@@ -214,149 +274,271 @@ const { data: votes } =
     return;
   }
 
-  const singerTokens =
-    [...new Set(
-      performances.map(
-        (item: any) =>
-          item.singer_token
-      )
-    )];
+  const {
+    data: votes,
+    error: votesError,
+  } = await supabase
+    .from("singer_votes")
+    .select("*")
+    .eq(
+      "room_code",
+      roomCode
+    )
+    .eq(
+      "event_id",
+      eventId
+    );
 
-  const { data: votes } =
-    await supabase
-      .from("singer_votes")
-      .select("*")
-      .in(
-        "singer_token",
-        singerTokens
-      );
-
-  if (!votes || votes.length === 0) {
+  if (
+    votesError ||
+    !votes ||
+    votes.length === 0
+  ) {
     setTopRanking([]);
     return;
   }
 
-  const rankingMap: any = {};
+  const rankingMap: Record<
+    string,
+    {
+      singer_name: string;
+      total: number;
+      count: number;
+      presentations: number;
+    }
+  > = {};
 
-  votes.forEach((vote: any) => {
+  for (
+    const performance
+    of performances
+  ) {
 
-    if (!rankingMap[vote.singer_token]) {
+    const singerToken =
+      performance.singer_token;
 
-      const performance =
-        performances.find(
-          (p: any) =>
-            p.singer_token ===
-            vote.singer_token
-        );
-
-      rankingMap[vote.singer_token] = {
+    if (
+      !rankingMap[singerToken]
+    ) {
+      rankingMap[singerToken] = {
         singer_name:
-          performance?.singer_name ||
+          performance.singer_name ||
           "Desconhecido",
-
         total: 0,
-
-        count: 0
+        count: 0,
+        presentations: 0,
       };
     }
 
     rankingMap[
-      vote.singer_token
-    ].total += Number(vote.score);
+      singerToken
+    ].presentations += 1;
+  }
+
+  for (
+    const vote
+    of votes
+  ) {
+
+    const singerToken =
+      vote.singer_token;
+
+    if (
+      !rankingMap[singerToken]
+    ) {
+      continue;
+    }
 
     rankingMap[
-      vote.singer_token
-    ].count += 1;
+      singerToken
+    ].total +=
+      Number(vote.score);
 
-  });
+    rankingMap[
+      singerToken
+    ].count += 1;
+  }
 
   const ranking =
     Object.values(
       rankingMap
-    ).map((item: any) => ({
-      singer_name:
-        item.singer_name,
+    )
+      .filter(
+        (item) =>
+          item.count > 0
+      )
+      .map(
+        (item) => ({
+          singer_name:
+            item.singer_name,
 
-      average:
-        item.total /
-        item.count,
+          average:
+            item.total /
+            item.count,
 
-      votes:
-        item.count
-    }));
+          votes:
+            item.count,
 
-  ranking.sort(
-    (a: any, b: any) =>
-      b.average -
-      a.average
-  );
+          presentations:
+            item.presentations,
+        })
+      )
+      .sort(
+        (a, b) =>
+          b.average -
+          a.average
+      );
 
   setTopRanking(
     ranking.slice(0, 3)
   );
 }
   async function loadData() {
-    const { data: current } =
-      await supabase
-        .from("current_singer")
-        .select("*")
-        .eq("room_code", roomCode)
-        .single();
 
-    const { data: queueData } =
-      await supabase
-        .from("queue")
-        .select("*")
-        .eq("room_code", roomCode)
-        .order("created_at");
+  const {
+    data: room,
+    error: roomError,
+  } = await supabase
+    .from("rooms")
+    .select("*")
+    .eq(
+      "room_code",
+      roomCode
+    )
+    .single();
 
-    const { data: room } =
-      await supabase
-        .from("rooms")
-        .select("*")
-        .eq("room_code", roomCode)
-        .single();
-    
-    const { data: statusData } =
-      await supabase
-        .from("event_status")
-        .select("*")
-        .eq("room_code", roomCode)
-        .single();
-
-    if (room?.room_name) {
-      setRoomName(room.room_name);
-    }
-
-    setCurrentSinger(current);
-    setQueue(queueData || []);
-    
-    if (statusData?.status) {
-      setEventStatus(
-        statusData.status
-
-    
+  if (
+    roomError ||
+    !room
+  ) {
+    console.error(
+      "Erro ao carregar sala:",
+      roomError
     );
-    }
-    if (
-       statusData?.status ===
-       "awards"
-    ) 
-    {
-     router.push("/awards");
-     return;
-    }
-
-    if (current?.singer_token) {
-      await loadVotes(
-        current.singer_token
-      );
-    } else {
-      setCurrentScore(0);
-      setCurrentVotes(0);
-    }
-    await loadRanking();
+    return;
   }
+
+  if (room.room_name) {
+    setRoomName(
+      room.room_name
+    );
+  }
+
+  const eventId =
+    room.current_event_id;
+
+  setCurrentEventId(
+    eventId || null
+  );
+
+  const {
+    data: statusData,
+    error: statusError,
+  } = await supabase
+    .from("event_status")
+    .select("*")
+    .eq(
+      "room_code",
+      roomCode
+    )
+    .maybeSingle();
+
+  if (statusError) {
+    console.error(
+      "Erro ao carregar status:",
+      statusError
+    );
+  }
+
+  if (statusData?.status) {
+    setEventStatus(
+      statusData.status
+    );
+  }
+
+  if (
+    room.status === "encerrada" ||
+    statusData?.status === "awards"
+  ) {
+    router.push(
+      `/awards/${roomCode}`
+    );
+    return;
+  }
+
+  const {
+    data: queueData,
+    error: queueError,
+  } = await supabase
+    .from("queue")
+    .select("*")
+    .eq(
+      "room_code",
+      roomCode
+    )
+    .order("created_at");
+
+  if (queueError) {
+    console.error(
+      "Erro ao carregar fila:",
+      queueError
+    );
+  }
+
+  setQueue(
+    queueData || []
+  );
+
+  if (!eventId) {
+    setCurrentSinger(null);
+    setCurrentScore(0);
+    setCurrentVotes(0);
+    setTopRanking([]);
+    return;
+  }
+
+  const {
+    data: current,
+    error: currentError,
+  } = await supabase
+    .from("current_singer")
+    .select("*")
+    .eq(
+      "room_code",
+      roomCode
+    )
+    .eq(
+      "event_id",
+      eventId
+    )
+    .maybeSingle();
+
+  if (currentError) {
+    console.error(
+      "Erro ao carregar cantor atual:",
+      currentError
+    );
+  }
+
+  setCurrentSinger(
+    current || null
+  );
+
+  if (
+    current?.singer_token
+  ) {
+    await loadVotes(
+      current.singer_token,
+      eventId
+    );
+  } else {
+    setCurrentScore(0);
+    setCurrentVotes(0);
+  }
+
+  await loadRanking(
+    eventId
+  );
+}
 
   const nextSinger =
     queue.length > 0
@@ -399,9 +581,22 @@ if (!authorized) {
             🎤 {roomName}
           </h1>
 
-          <p className="text-slate-400 mt-2">
-            Sala {roomCode}
-          </p>
+          <div className="text-slate-400 mt-2">
+
+  <p>
+    Sala {roomCode}
+  </p>
+
+  {currentEventId && (
+
+    <p className="text-xs mt-1">
+      Evento:{" "}
+      {currentEventId.slice(0, 8)}
+    </p>
+
+  )}
+
+</div>
         </div>
 
         <div className="text-5xl font-black text-yellow-400">
