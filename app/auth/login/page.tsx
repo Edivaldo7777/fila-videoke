@@ -118,19 +118,12 @@ export default function LoginPage() {
           {isLoading ? "Entrando..." : "Entrar"}
         </button>
 
-        <div className="mt-6 flex flex-col gap-3 text-center text-sm">
+        <div className="mt-6 text-center text-sm">
           <button
             onClick={() => router.push("/auth/register")}
             className="text-blue-600 hover:text-blue-800 font-bold transition-colors"
           >
             📝 Criar nova conta
-          </button>
-
-          <button
-            onClick={() => router.push("/auth/forgot-password")}
-            className="text-slate-500 hover:text-slate-700 transition-colors"
-          >
-            Esqueci minha senha
           </button>
         </div>
 
