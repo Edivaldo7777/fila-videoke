@@ -15,6 +15,7 @@ export default function JuradoPage({
   const [score, setScore] = useState<number>(0);
   const [message, setMessage] = useState("");
   const [eventMode, setEventMode] = useState("traditional");
+  const [votingMode, setVotingMode] = useState("stars"); // Novo estado para o tipo de votação
   const [eventEnded, setEventEnded] = useState(false);
 
   useEffect(() => {
@@ -40,6 +41,7 @@ export default function JuradoPage({
 
         if (room) {
           setEventMode(room.event_mode || "traditional");
+          setVotingMode(room.voting_mode || "stars"); // Carrega a escolha de voto da sala
         }
       }
     }
@@ -88,7 +90,7 @@ export default function JuradoPage({
 
     const { data: room, error: roomError } = await supabase
       .from("rooms")
-      .select("current_event_id, status")
+      .select("current_event_id, status, voting_mode")
       .eq("room_code", roomCode)
       .single();
 
@@ -96,6 +98,10 @@ export default function JuradoPage({
       console.error("Erro ao carregar sala:", roomError);
       setCurrentSinger(null);
       return;
+    }
+
+    if (room.voting_mode) {
+      setVotingMode(room.voting_mode);
     }
 
     const ended = room.status === "encerrada";
@@ -147,7 +153,9 @@ export default function JuradoPage({
         return;
       }
 
-      if (score === 0) {
+      // No modo thumbs, score 0 é válido (significa Ruim), então validamos se foi nulo ou indefinido se necessário, ou mantemos a regra.
+      // Aqui tratamos se o score não foi selecionado (podemos usar uma flag ou garantir que o valor de Ruim envie 0 e Bom envie 100).
+      if (votingMode === "stars" && score === 0) {
         setMessage("Selecione uma nota.");
         return;
       }
@@ -323,32 +331,54 @@ export default function JuradoPage({
         </div>
 
         <div className="bg-slate-800 rounded-xl p-6">
-          <h2 className="text-2xl font-bold mb-4">Dê sua nota</h2>
+          <h2 className="text-2xl font-bold mb-4">Dê sua avaliação</h2>
 
-          <div className="grid grid-cols-5 gap-2 mb-6">
-            {[1, 2, 3, 4, 5].map((value) => (
+          {/* Renderização condicional baseada na escolha de voto da sala */}
+          {votingMode === "thumbs" ? (
+            <div className="grid grid-cols-2 gap-4 mb-6">
               <button
-                key={value}
-                onClick={() => setScore(value)}
-                className={`p-4 rounded text-2xl ${
-                  score === value
-                    ? "bg-yellow-500 text-black"
-                    : "bg-slate-700"
+                onClick={() => setScore(100)}
+                className={`p-6 rounded-2xl text-2xl font-black transition-all ${
+                  score === 100 ? "bg-green-500 text-black shadow-lg scale-105" : "bg-slate-700 text-white"
                 }`}
               >
-                ⭐
+                👍 Bom
               </button>
-            ))}
-          </div>
+              <button
+                onClick={() => setScore(0)}
+                className={`p-6 rounded-2xl text-2xl font-black transition-all ${
+                  score === 0 && score !== null && score === 0 ? "bg-red-500 text-black shadow-lg scale-105" : "bg-slate-700 text-white"
+                }`}
+              >
+                👎 Ruim
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-5 gap-2 mb-6">
+              {[1, 2, 3, 4, 5].map((value) => (
+                <button
+                  key={value}
+                  onClick={() => setScore(value)}
+                  className={`p-4 rounded text-2xl transition-all ${
+                    score === value
+                      ? "bg-yellow-500 text-black"
+                      : "bg-slate-700"
+                  }`}
+                >
+                  ⭐
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="mb-4">
-            Nota Selecionada: <strong>{score}</strong>
+            Seleção Atual: <strong>{score}</strong>
           </div>
 
           <div className="flex gap-3 flex-wrap items-center">
             <button
               onClick={vote}
-              className="bg-green-600 hover:bg-green-700 px-5 py-3 rounded"
+              className="bg-green-600 hover:bg-green-700 px-5 py-3 rounded font-bold"
             >
               Enviar Voto
             </button>
@@ -356,7 +386,7 @@ export default function JuradoPage({
             {eventMode === "interactive" && (
               <button
                 onClick={becomeSinger}
-                className="bg-blue-600 hover:bg-blue-700 px-5 py-3 rounded"
+                className="bg-blue-600 hover:bg-blue-700 px-5 py-3 rounded font-bold"
               >
                 🎤 Quero Cantar
               </button>
