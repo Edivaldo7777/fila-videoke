@@ -142,15 +142,28 @@ export default function AdminPage() {
     <main className="min-h-screen bg-slate-100 p-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-4xl font-black">👑 Painel Master</h1>
-        <button
-          onClick={() => {
-            localStorage.removeItem("user");
-            window.location.href = "/auth/login";
-          }}
-          className="bg-red-600 text-white px-4 py-2 rounded"
-        >
-          🚪 Sair
-        </button>
+        
+        {/* Nova div envolvendo os dois botões no topo */}
+        <div className="flex gap-4">
+          <button
+            onClick={() => {
+              window.location.href = "/dashboard";
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold"
+          >
+            📊 Ir para Dashboard
+          </button>
+          
+          <button
+            onClick={() => {
+              localStorage.removeItem("user");
+              window.location.href = "/auth/login";
+            }}
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold"
+          >
+            🚪 Sair
+          </button>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-4 gap-4 mb-8">
@@ -194,49 +207,49 @@ export default function AdminPage() {
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => approveUser(user.id)}
-                className="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold"
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-bold"
               >
                 ✅ Aprovar
               </button>
 
               <button
                 onClick={() => blockUser(user.id)}
-                className="bg-red-600 text-white px-4 py-2 rounded text-sm font-bold"
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm font-bold"
               >
                 ⛔ Bloquear
               </button>
 
               <button
                 onClick={() => updatePlan(user.id, "Básico")}
-                className="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold"
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-bold"
               >
                 🟢 Básico
               </button>
 
               <button
                 onClick={() => updatePlan(user.id, "Pro")}
-                className="bg-yellow-600 text-white px-4 py-2 rounded text-sm font-bold"
+                className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded text-sm font-bold"
               >
                 🟡 Pro
               </button>
 
               <button
                 onClick={() => updatePlan(user.id, "Premium")}
-                className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-bold"
               >
                 🔵 Premium
               </button>
 
               <button
                 onClick={() => resetPassword(user.id)}
-                className="bg-purple-600 text-white px-4 py-2 rounded text-sm font-bold"
+                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm font-bold"
               >
                 🔑 Resetar Senha
               </button>
 
               <button
                 onClick={() => deleteUser(user)}
-                className="bg-red-800 text-white px-4 py-2 rounded text-sm font-bold"
+                className="bg-red-800 hover:bg-red-900 text-white px-4 py-2 rounded text-sm font-bold"
               >
                 🗑 Excluir Cliente
               </button>
