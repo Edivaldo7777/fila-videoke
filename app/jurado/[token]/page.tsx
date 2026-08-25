@@ -185,8 +185,18 @@ if (
       const { data: performance, error: performanceError } = await supabase
         .from("performances")
         .select("*")
-        .eq("room_code", roomCode)
-        .eq("singer_token", currentSinger.singer_token)
+        .eq(
+  "room_code",
+  roomCode
+)
+.eq(
+  "event_id",
+  currentSinger.event_id
+)
+.eq(
+  "singer_token",
+  currentSinger.singer_token
+)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
