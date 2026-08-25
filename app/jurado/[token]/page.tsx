@@ -51,37 +51,120 @@ export default function JuradoPage({
   }, [params]);
 
   // Supabase Realtime para manter o jurado sincronizado sem sobrecarregar o banco
-  useEffect(() => {
-    if (!roomCode) return;
+  // Atualização automática da Área do Jurado
+useEffect(() => {
 
-    let channel: any;
+  if (!roomCode) {
+    return;
+  }
 
-    async function initializeJuror() {
-      await loadCurrentSinger();
+  let channel: any = null;
 
-      channel = supabase
-        .channel("juror_room_updates")
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "current_singer", filter: `room_code=eq.${roomCode}` },
-          () => loadCurrentSinger()
-        )
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "rooms", filter: `room_code=eq.${roomCode}` },
-          () => loadCurrentSinger()
-        )
-        .subscribe();
+  let refreshTimer:
+    ReturnType<typeof setInterval> |
+    null = null;
+
+  let active = true;
+
+  async function initializeJuror() {
+
+    await loadCurrentSinger();
+
+    if (!active) {
+      return;
     }
 
-    initializeJuror();
+    refreshTimer =
+      window.setInterval(
+        () => {
+          loadCurrentSinger();
+        },
+        2000
+      );
 
-    return () => {
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
-    };
-  }, [roomCode]);
+    channel = supabase
+      .channel(
+        `juror_updates_${roomCode}_${voterToken || "waiting"}`
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "current_singer",
+          filter:
+            `room_code=eq.${roomCode}`,
+        },
+        () => {
+          loadCurrentSinger();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "rooms",
+          filter:
+            `room_code=eq.${roomCode}`,
+        },
+        () => {
+          loadCurrentSinger();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "event_status",
+          filter:
+            `room_code=eq.${roomCode}`,
+        },
+        () => {
+          loadCurrentSinger();
+        }
+      )
+      .subscribe(
+        (status) => {
+
+          console.log(
+            "Status Realtime do Jurado:",
+            status
+          );
+
+          if (
+            status === "CHANNEL_ERROR" ||
+            status === "TIMED_OUT"
+          ) {
+            console.warn(
+              "Realtime indisponível. A Área do Jurado continuará atualizando a cada 2 segundos."
+            );
+          }
+        }
+      );
+  }
+
+  initializeJuror();
+
+  return () => {
+
+    active = false;
+
+    if (refreshTimer) {
+      window.clearInterval(
+        refreshTimer
+      );
+    }
+
+    if (channel) {
+      supabase.removeChannel(
+        channel
+      );
+    }
+  };
+
+}, [roomCode, voterToken]);
 
   async function loadCurrentSinger() {
     if (!roomCode) {
