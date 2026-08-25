@@ -12,7 +12,8 @@ export default function JuradoPage({
   const [roomCode, setRoomCode] = useState("");
   const [voterName, setVoterName] = useState("");
   const [currentSinger, setCurrentSinger] = useState<any>(null);
-  const [score, setScore] = useState<number>(0);
+  const [score, setScore] =
+    useState<number | null>(null);
   const [message, setMessage] = useState("");
   const [eventMode, setEventMode] = useState("traditional");
   const [votingMode, setVotingMode] = useState("stars"); // Novo estado para o tipo de votação
@@ -109,7 +110,7 @@ export default function JuradoPage({
 
     if (ended) {
       setCurrentSinger(null);
-      setScore(0);
+      setScore(null);
       setMessage("");
       return;
     }
@@ -118,7 +119,7 @@ export default function JuradoPage({
 
     if (!eventId) {
       setCurrentSinger(null);
-      setScore(0);
+      setScore(null);
       setMessage("");
       return;
     }
@@ -139,7 +140,7 @@ export default function JuradoPage({
     setCurrentSinger(current || null);
 
     if (!current) {
-      setScore(0);
+      setScore(null);
       setMessage("");
     }
   }
@@ -155,10 +156,26 @@ export default function JuradoPage({
 
       // No modo thumbs, score 0 é válido (significa Ruim), então validamos se foi nulo ou indefinido se necessário, ou mantemos a regra.
       // Aqui tratamos se o score não foi selecionado (podemos usar uma flag ou garantir que o valor de Ruim envie 0 e Bom envie 100).
-      if (votingMode === "stars" && score === 0) {
-        setMessage("Selecione uma nota.");
-        return;
-      }
+      if (
+  votingMode === "stars" &&
+  score === null
+) {
+  setMessage(
+    "Selecione uma nota."
+  );
+  return;
+}
+
+if (
+  votingMode === "thumbs" &&
+  score !== 100 &&
+  score !== 0
+) {
+  setMessage(
+    "Escolha Bom ou Ruim."
+  );
+  return;
+}
 
       if (!currentSinger.singer_token) {
         setMessage("Não foi possível identificar o cantor atual.");
@@ -219,7 +236,7 @@ export default function JuradoPage({
       }
 
       setMessage("✅ Voto registrado com sucesso.");
-      setScore(0);
+      setScore(null);
     } catch (error: any) {
       console.error("Erro inesperado ao votar:", error);
       setMessage(error?.message || "Erro inesperado ao votar.");
@@ -315,91 +332,463 @@ export default function JuradoPage({
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white p-8">
-      <div className="max-w-xl mx-auto">
-        <h1 className="text-5xl font-black mb-2">⭐ Área do Jurado</h1>
-        <p className="text-slate-400 mb-8">Bem-vindo {voterName}</p>
+  <main className="min-h-screen bg-gradient-to-br from-slate-950 via-amber-950 to-black text-white p-4 md:p-8">
 
-        <div className="bg-yellow-400 text-black rounded-xl p-6 mb-6">
-          <h2 className="text-2xl font-black mb-2">🎤 Cantando Agora</h2>
-          <div className="text-4xl font-black">
-            {currentSinger?.singer_name || "Aguardando"}
+    <div className="max-w-3xl mx-auto">
+
+      {/* Cabeçalho */}
+      <header className="bg-wh*te/5 border border-white/10 backdr*p-blur-xl rounded-3xl p-6 mb-6 sha*ow-2xl">
+
+        <div className="*lex flex-col sm:flex-row sm:items-*enter sm:justify-between gap-4">
+
+*         <div>
+
+            <div c*assName="inline-flex items-center *ap-2 bg-yellow-500/10 border borde*-yellow-500/20 text-yellow-300 px-* py-1 rounded-full text-xs font-bo*d mb-3">
+
+              <span clas*Name="w-2 h-2 bg-yellow-400 rounde*-full animate-pulse" />
+
+         *    ÁREA DO JURADO
+
+            </*iv>
+
+            <h1 className="te*t-3xl md:text-5xl font-black">
+
+  *           ⭐ Olá, {voterName || "J*rado"}
+
+            </h1>
+
+       *    <p className="text-slate-400 mt-2">
+
+              Avalie as apresentações e participe da escolha dos destaques da noite.
+
+            </p>
+
           </div>
-          <div className="text-xl mt-2">
-            🎵 {currentSinger?.song_name || "Nenhuma música"}
+
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl px-5 py-3">
+
+            <p className="text-xs text-slate-400 uppercase font-bold">
+
+              Sala
+
+            </p>
+
+            <p className="text-xl font-black text-yellow-400">
+
+              {roomCode}
+
+            </p>
+
           </div>
+
         </div>
 
-        <div className="bg-slate-800 rounded-xl p-6">
-          <h2 className="text-2xl font-bold mb-4">Dê sua avaliação</h2>
+      </header>
 
-          {/* Renderização condicional baseada na escolha de voto da sala */}
-          {votingMode === "thumbs" ? (
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <button
-                onClick={() => setScore(100)}
-                className={`p-6 rounded-2xl text-2xl font-black transition-all ${
-                  score === 100 ? "bg-green-500 text-black shadow-lg scale-105" : "bg-slate-700 text-white"
-                }`}
-              >
-                👍 Bom
-              </button>
-              <button
-                onClick={() => setScore(0)}
-                className={`p-6 rounded-2xl text-2xl font-black transition-all ${
-                  score === 0 && score !== null && score === 0 ? "bg-red-500 text-black shadow-lg scale-105" : "bg-slate-700 text-white"
-                }`}
-              >
-                👎 Ruim
-              </button>
+      {/* Cantor atual */}
+      <section className="relat*ve overflow-hidden bg-gradient-to-* from-yellow-400 via-amber-400 to-*range-500 text-black rounded-3xl p*6 md:p-8 mb-6 shadow-2xl">
+
+      * <div className="absolute -right-1* -top-16 w-52 h-52 bg-white/30 rou*ded-full blur-3xl" />
+
+        <di* className="relative">
+
+          *p className="text-xs font-black up*ercase tracking-widest opacity-70"*
+
+            🎤 Cantando agora
+
+ *        </p>
+
+          <h2 classN*me="text-4xl md:text-6xl font-blac* mt-2 break-words">
+
+            {*urrentSinger?.singer_name ||
+     *        "Aguardando cantor"}
+
+    *     </h2>
+
+          <p className*"text-xl md:text-2xl font-bold mt-*">
+
+            🎵{" "}
+
+         *  {currentSinger?.song_name ||
+   *          "Nenhuma música em execu*ão"}
+
+          </p>
+
+          {c*rrentSinger ? (
+
+            <div *lassName="mt-5 inline-flex items-center gap-2 bg-black/80 text-white rounded-full px-4 py-2 text-sm font-bold">
+
+              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+
+              APRESENTAÇÃO EM ANDAMENTO
+
             </div>
+
           ) : (
-            <div className="grid grid-cols-5 gap-2 mb-6">
-              {[1, 2, 3, 4, 5].map((value) => (
+
+            <div className="mt-5 inline-flex items-center gap-2 bg-white/60 text-black rounded-full px-4 py-2 text-sm font-bold">
+
+              ⏳ Aguardando o operador
+
+            </div>
+
+          )}
+
+        </div>
+
+      </section>
+
+      {/* Informações da votação */}
+      <section className="grid *rid-cols-1 sm:grid-cols-2 gap-4 mb*6">
+
+        <div className="bg-wh*te/5 border border-white/10 rounde*-2xl p-5 shadow-xl">
+
+          <d*v className="flex items-center gap*4">
+
+            <div className="w*12 h-12 bg-yellow-500/20 border bo*der-yellow-500/30 rounded-2xl flex*items-center justify-center text-2*l">
+
+              {votingMode ===*"thumbs"
+                ? "👍"
+  *             : "⭐"}
+
+            <*div>
+
+            <div>
+
+         *    <p className="text-xs uppercas* tracking-wider text-slate-400 fon*-bold">
+
+                Tipo de v*tação
+
+              </p>
+
+       *      <p className="font-black tex*-lg mt-1">
+
+                {votin*Mode === "thumbs"
+                * ? "Aprovação Bom ou Ruim"
+       *          : "Avaliação por Estrela*"}
+
+              </p>
+
+          * </div>
+
+          </div>
+
+       *</div>
+
+        <div className="bg*white/5 border border-white/10 rou*ded-2xl p-5 shadow-xl">
+
+         *<div className="flex items-center *ap-4">
+
+            <div className*"w-12 h-12 bg-blue-500/20 border b*rder-blue-500/30 rounded-2xl flex items-center justify-center text-2xl">
+
+              {eventMode === "interactive"
+                ? "🔄"
+                : "🔒"}
+
+            </div>
+
+            <div>
+
+              <p className="text-xs uppercase tracking-wider text-slate-400 font-bold">
+
+                Modo do evento
+
+              </p>
+
+              <p className="font-black text-lg mt-1">
+
+                {eventMode === "interactive"
+                  ? "Interativo"
+                  : "Tradicional"}
+
+              </p>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+      {/* Área da votação */}
+      <section className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-6 md:p-8 mb-6 shadow-2xl">
+
+        <div className="flex items-center gap-4 mb-7">
+
+          <div className="w-14 h-14 bg-yellow-500/20 border border-yellow-500/30 rounded-2xl flex items-center justify-center text-3xl">
+
+            🗳️
+
+          </div>
+
+          <div>
+
+            <h2 className="text-2xl font-black">
+
+              Dê sua avaliação
+
+            </h2>
+
+            <p className="text-sm text-slate-400 mt-1">
+
+              Seu voto será associado somente à apresentação atual.
+
+            </p>
+
+          </div>
+
+        </div>
+
+        {!currentSinger ? (
+
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-8 text-center">
+
+            <div className="text-5xl mb-4">
+
+              ⏳
+
+            </div>
+
+            <h3 className="font-black text-xl">
+
+              Aguardando uma apresentação
+
+            </h3>
+
+            <p className="text-slate-400 mt-2">
+
+              Os controles de votação serão liberados quando o operador chamar um cantor.
+
+            </p>
+
+          </div>
+
+        ) : (
+
+          <>
+
+            <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5 mb-6">
+
+              <p className="text-xs uppercase tracking-widest text-slate-400 font-bold">
+
+                Você está avaliando
+
+              </p>
+
+              <p className="text-2xl font-black mt-2">
+
+                🎤 {currentSinger.singer_name}
+
+              </p>
+
+              <p className="text-slate-400 mt-1">
+
+                🎵 {currentSinger.song_name}
+
+              </p>
+
+            </div>
+
+            {votingMode === "thumbs" ? (
+
+              <div className="grid grid-cols-2 gap-4 mb-6">
+
                 <button
-                  key={value}
-                  onClick={() => setScore(value)}
-                  className={`p-4 rounded text-2xl transition-all ${
-                    score === value
-                      ? "bg-yellow-500 text-black"
-                      : "bg-slate-700"
+                  onClick={() => {
+                    setScore(100);
+                    setMessage("");
+                  }}
+                  className={`p-5 md:p-7 rounded-2xl text-xl md:text-2xl font-black transition-all ${
+                    score === 100
+                      ? "bg-emerald-500 text-black ring-4 ring-emerald-300/30 scale-[1.02]"
+                      : "bg-slate-800 border border-slate-700 hover:border-emerald-500 hover:bg-emerald-500/10"
                   }`}
                 >
-                  ⭐
+
+                  <div className="text-5xl mb-3">
+
+                    👍
+
+                  </div>
+
+                  Bom
+
                 </button>
-              ))}
+
+                <button
+                  onClick={() => {
+                    setScore(0);
+                    setMessage("");
+                  }}
+                  className={`p-5 md:p-7 rounded-2xl text-xl md:text-2xl font-black transition-all ${
+                    score === 0
+                      ? "bg-red-500 text-white ring-4 ring-red-300/30 scale-[1.02]"
+                      : "bg-slate-800 border border-slate-700 hover:border-red-500 hover:bg-red-500/10"
+                  }`}
+                >
+
+                  <div className="text-5xl mb-3">
+
+                    👎
+
+                  </div>
+
+                  Ruim
+
+                </button>
+
+              </div>
+
+            ) : (
+
+              <div className="mb-6">
+
+                <p className="text-sm text-slate-400 mb-3">
+
+                  Selecione de uma a cinco estrelas:
+
+                </p>
+
+                <div className="grid grid-cols-5 gap-2">
+
+                  {[1, 2, 3, 4, 5].map(
+                    (value) => (
+
+                      <button
+                        key={value}
+                        onClick={() => {
+                          setScore(value);
+                          setMessage("");
+                        }}
+                        className={`p-3 md:p-5 rounded-xl text-xl md:text-2xl transition-all ${
+                          score === value
+                            ? "bg-yellow-500 text-black ring-4 ring-yellow-300/30 scale-105"
+                            : "bg-slate-800 border border-slate-700 hover:border-yellow-500"
+                        }`}
+                      >
+
+                        ⭐
+
+                      </button>
+
+                    )
+                  )}
+
+                </div>
+
+              </div>
+
+            )}
+
+            <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 mb-5">
+
+              <p className="text-sm text-slate-400">
+
+                Seleção atual
+
+              </p>
+
+              <p className="font-black text-lg mt-1">
+
+                {score === null
+                  ? "Nenhuma avaliação selecionada"
+                  : votingMode === "thumbs"
+                  ? score === 100
+                    ? "👍 Bom"
+                    : "👎 Ruim"
+                  : `⭐ ${score} estrela${
+                      score === 1
+                        ? ""
+                        : "s"
+                    }`}
+
+              </p>
+
             </div>
-          )}
 
-          <div className="mb-4">
-            Seleção Atual: <strong>{score}</strong>
-          </div>
-
-          <div className="flex gap-3 flex-wrap items-center">
             <button
               onClick={vote}
-              className="bg-green-600 hover:bg-green-700 px-5 py-3 rounded font-bold"
+              disabled={score === null}
+              className={`w-full px-5 py-4 rounded-xl font-black text-lg transition-all ${
+                score === null
+                  ? "bg-slate-700 text-slate-400 cursor-not-allowed"
+                  : "bg-emerald-600 hover:bg-emerald-500 text-white hover:-translate-y-0.5 shadow-lg"
+              }`}
             >
-              Enviar Voto
+
+              ✅ Enviar Voto
+
             </button>
 
-            {eventMode === "interactive" && (
-              <button
-                onClick={becomeSinger}
-                className="bg-blue-600 hover:bg-blue-700 px-5 py-3 rounded font-bold"
-              >
-                🎤 Quero Cantar
-              </button>
-            )}
+          </>
+
+        )}
+
+        {message && (
+
+          <div
+            className={`mt-5 border rounded-xl p-4 font-bold text-center ${
+              message.includes("sucesso")
+                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
+                : "bg-yellow-500/10 border-yellow-500/30 text-yellow-200"
+            }`}
+          >
+
+            {message}
+
           </div>
 
-          {message && (
-            <div className="mt-4 font-bold text-yellow-300">
-              {message}
+        )}
+
+      </section>
+
+      {/* Troca para cantor */}
+      {eventMode === "interactive" && (
+
+        <section className="bg-gradient-to-r from-blue-900/60 to-purple-900/60 border border-blue-500/20 rounded-3xl p-6 mb-6 shadow-xl">
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+
+            <div>
+
+              <h2 className="text-xl font-black">
+
+                🎤 Também quer cantar?
+
+              </h2>
+
+              <p className="text-slate-300 mt-2">
+
+                Ao confirmar, você entrará no final da fila e sua tela mudará para a Área do Cantor.
+
+              </p>
+
             </div>
-          )}
-        </div>
-      </div>
-    </main>
-  );
+
+            <button
+              onClick={becomeSinger}
+              className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-black transition-all shrink-0"
+            >
+
+              🎤 Quero Cantar
+
+            </button>
+
+          </div>
+
+        </section>
+
+      )}
+
+      <footer className="text-center text-xs text-slate-500 py-4">
+
+        Fila Videokê • Avalie com responsabilidade e divirta-se
+
+      </footer>
+
+    </div>
+
+  </main>
+);
 }
