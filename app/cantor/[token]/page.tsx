@@ -422,195 +422,532 @@ export default function CantorPage({
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 p-8">
-      <div className="max-w-xl mx-auto bg-white rounded shadow p-6">
+  <main className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-black text-white p-4 md:p-8">
 
-        <h1 className="text-3xl font-bold mb-4">
-          🎤 Área do Cantor
-        </h1>
+    <div className="max-w-3xl mx-auto">
 
-        <p>
-          <strong>Nome:</strong> {singerName}
-        </p>
+      {/* Cabeçalho */}
+      <header className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-6 mb-6 shadow-2xl">
 
-        <p>
-          <strong>Sala:</strong> {roomCode}
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
-        <div className="mt-4 mb-6 p-4 bg-slate-100 rounded">
-          <p>
-            <strong>🎤 Cantando agora:</strong>{" "}
-            {currentSinger?.singer_name || "Aguardando cantor"}
+          <div>
+
+            <div className="inline-flex items-center gap-2 bg-fuchsia-500/10 border border-fuchsia-500/20 text-fuchsia-300 px-3 py-1 rounded-full text-xs font-bold mb-3">
+
+              <span className="w-2 h-2 bg-fuchsia-400 rounded-full animate-pulse" />
+
+              ÁREA DO CANTOR
+
+            </div>
+
+            <h1 className="text-3xl md:text-5xl font-black">
+
+              🎤 Olá, {singerName || "Cantor"}
+
+            </h1>
+
+            <p className="text-slate-400 mt-2">
+
+              Acompanhe sua posição e participe do evento.
+
+            </p>
+
+          </div>
+
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl px-5 py-3">
+
+            <p className="text-xs text-slate-400 uppercase font-bold">
+              Sala
+            </p>
+
+            <p className="text-xl font-black text-yellow-400">
+              {roomCode}
+            </p>
+
+          </div>
+
+        </div>
+
+      </header>
+
+      {/* Apresentação atual */}
+      <section className="relative overflow-hidden bg-gradient-to-r from-yellow-400 via-amber-400 to-orange-500 text-black rounded-3xl p-6 md:p-8 mb-6 shadow-2xl">
+
+        <div className="absolute -right-16 -top-16 w-52 h-52 bg-white/30 rounded-full blur-3xl" />
+
+        <div className="relative">
+
+          <p className="text-xs font-black uppercase tracking-widest opacity-70">
+
+            🎤 Cantando agora
+
+          </p>
+
+          <h2 className="text-4xl md:text-5xl font-black mt-2 break-words">
+
+            {currentSinger?.singer_name ||
+              "Aguardando cantor"}
+
+          </h2>
+
+          <p className="text-xl font-bold mt-2">
+
+            🎵{" "}
+
+            {currentSinger?.song_name ||
+              "Nenhuma música em execução"}
+
+          </p>
+
+          {currentSinger?.singer_token === token && (
+
+            <div className="mt-5 bg-black/85 text-white rounded-2xl p-4 text-center">
+
+              <p className="text-xl font-black">
+                🌟 O palco é seu!
+              </p>
+
+              <p className="text-sm text-slate-200 mt-1">
+                Faça uma ótima apresentação.
+              </p>
+
+            </div>
+
+          )}
+
+        </div>
+
+      </section>
+
+      {/* Posição na fila */}
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center shadow-xl">
+
+          <div className="text-3xl mb-2">
+            📍
+          </div>
+
+          <p className="text-xs uppercase tracking-wider text-slate-400 font-bold">
+            Sua posição
+          </p>
+
+          <p className="text-4xl font-black mt-2 text-fuchsia-300">
+
+            {position ?? "-"}
+
+          </p>
+
+        </div>
+
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center shadow-xl">
+
+          <div className="text-3xl mb-2">
+            👥
+          </div>
+
+          <p className="text-xs uppercase tracking-wider text-slate-400 font-bold">
+            Cantores à frente
+          </p>
+
+          <p className="text-4xl font-black mt-2 text-blue-300">
+
+            {singersAhead}
+
+          </p>
+
+        </div>
+
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center shadow-xl">
+
+          <div className="text-3xl mb-2">
+            ⏳
+          </div>
+
+          <p className="text-xs uppercase tracking-wider text-slate-400 font-bold">
+            Tempo estimado
+          </p>
+
+          <p className="text-4xl font-black mt-2 text-orange-300">
+
+            {estimatedMinutes}
+
+            <span className="text-base ml-1">
+              min
+            </span>
+
+          </p>
+
+        </div>
+
+      </section>
+
+      {/* Alertas de aproximação */}
+      {position === 4 && (
+
+        <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-200 rounded-2xl p-5 mb-6">
+
+          <p className="font-black">
+            🟡 Sua vez está se aproximando.
+          </p>
+
+          <p className="text-sm mt-1">
+            Fique atento à fila e prepare sua música.
+          </p>
+
+        </div>
+
+      )}
+
+      {position === 3 && (
+
+        <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-200 rounded-2xl p-5 mb-6">
+
+          <p className="font-black">
+            🟡 Faltam apenas dois cantores.
+          </p>
+
+          <p className="text-sm mt-1">
+            Comece a se preparar para sua apresentação.
+          </p>
+
+        </div>
+
+      )}
+
+      {position === 2 && (
+
+        <div className="bg-orange-500/10 border border-orange-500/30 text-orange-200 rounded-2xl p-5 mb-6">
+
+          <p className="font-black text-lg">
+            🟠 Prepare-se! Você é o próximo.
+          </p>
+
+          <p className="text-sm mt-1">
+            Dirija-se ao local de apresentação.
+          </p>
+
+        </div>
+
+      )}
+
+      {position === 1 && (
+
+        <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-200 rounded-2xl p-6 mb-6 text-center shadow-xl">
+
+          <div className="text-5xl mb-3">
+            🎤
+          </div>
+
+          <p className="font-black text-2xl">
+            É sua vez de cantar!
           </p>
 
           <p className="mt-2">
-            <strong>📍 Sua posição:</strong>{" "}
-            {position ?? "-"}
+            Prepare-se para subir ao palco.
           </p>
 
-          <p>
-            <strong>⏳ Faltam:</strong>{" "}
-            {singersAhead} cantores
-          </p>
-
-          <p>
-            <strong>⌚ Tempo estimado:</strong>{" "}
-            {estimatedMinutes} minutos
-          </p>
-
-          {position === 4 && (
-            <p className="mt-4 font-bold text-yellow-600">
-              🟡 Sua vez está se aproximando.
-            </p>
-          )}
-
-          {position === 3 && (
-            <p className="mt-4 font-bold text-yellow-700">
-              🟡 Faltam apenas 2 cantores.
-            </p>
-          )}
-
-          {position === 2 && (
-            <p className="mt-4 font-bold text-orange-600 text-lg">
-              🟠 Prepare-se! Você é o próximo.
-            </p>
-          )}
-
-          {position === 1 && (
-            <p className="mt-4 font-bold text-green-600 text-xl">
-              🎤 É sua vez de cantar!
-            </p>
-          )}
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded p-4 mb-4">
-          <p>✅ Sua próxima participação já está reservada na fila.</p>
-          <p className="mt-2">Informe abaixo qual será sua próxima música.</p>
+      )}
+
+      {/* Próxima música */}
+      <section className="bg-white/5 border border-white/10 backdrop-blur rounded-3xl p-6 mb-6 shadow-xl">
+
+        <div className="flex items-center gap-4 mb-6">
+
+          <div className="w-14 h-14 bg-blue-600/20 border border-blue-500/30 rounded-2xl flex items-center justify-center text-3xl">
+
+            🎵
+
+          </div>
+
+          <div>
+
+            <h2 className="text-2xl font-black">
+
+              Próxima Música
+
+            </h2>
+
+            <p className="text-sm text-slate-400 mt-1">
+
+              Sua próxima participação já está reservada.
+
+            </p>
+
+          </div>
+
         </div>
 
-        <label className="block mb-2 font-bold">
+        <label className="block text-sm font-bold text-slate-300 mb-2">
+
           Qual será sua próxima música?
+
         </label>
 
         <input
           type="text"
           value={nextSong}
-          onChange={(e) => setNextSong(e.target.value)}
-          className="border rounded p-2 w-full mb-4"
-          placeholder="Digite a próxima música"
+          onChange={(e) =>
+            setNextSong(
+              e.target.value
+            )
+          }
+          placeholder="Digite o nome da próxima música"
+          className="bg-slate-900 border border-slate-700 rounded-xl p-4 w-full mb-4 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
         />
 
-        <div className="flex gap-3 flex-wrap">
+        <div className="flex flex-col sm:flex-row gap-3">
+
           <button
             onClick={saveNextSong}
-            className="bg-blue-600 text-white px-4 py-2 rounded"
+            className="flex-1 bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 rounded-xl font-black transition-all"
           >
-            Salvar
+
+            💾 Salvar Próxima Música
+
           </button>
 
           {eventMode === "interactive" && (
+
             <button
               onClick={becomeJuror}
-              className="bg-yellow-500 text-black px-4 py-2 rounded font-bold"
+              className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-black px-5 py-3 rounded-xl font-black transition-all"
             >
+
               ⭐ Virar Jurado
+
             </button>
+
           )}
+
         </div>
 
-        {eventMode === "interactive" &&
-          currentSinger &&
-          currentSinger.singer_token !== token && (
+        {message && (
 
-          <div className="mt-8 border-t border-slate-200 pt-6">
+          <div className="mt-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-xl p-4 font-bold">
 
-            <h3 className="font-bold text-xl mb-2">
-              ⭐ Avaliar Apresentação Atual
-            </h3>
-
-            <p className="text-slate-600 mb-4">
-              Avalie a apresentação de{" "}
-              <strong>
-                {currentSinger.singer_name}
-              </strong>
-            </p>
-
-            {/* Renderização condicional do voto para o cantor (estrelas ou thumbs) */}
-            {votingMode === "thumbs" ? (
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <button
-                  onClick={() => {
-                    setVoteScore(100);
-                    setVoteMessage("");
-                  }}
-                  className={`p-4 rounded-xl text-xl font-bold transition-all ${
-                    voteScore === 100 ? "bg-green-500 text-black shadow-lg" : "bg-slate-200 text-slate-700"
-                  }`}
-                >
-                  👍 Bom
-                </button>
-                <button
-                  onClick={() => {
-                    setVoteScore(0);
-                    setVoteMessage("");
-                  }}
-                  className={`p-4 rounded-xl text-xl font-bold transition-all ${
-                    voteScore === 0 && voteScore !== null ? "bg-red-500 text-black shadow-lg" : "bg-slate-200 text-slate-700"
-                  }`}
-                >
-                  👎 Ruim
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-5 gap-2 mb-4">
-                {[1, 2, 3, 4, 5].map((value) => (
-                  <button
-                    key={value}
-                    onClick={() => {
-                      setVoteScore(value);
-                      setVoteMessage("");
-                    }}
-                    className={`p-3 rounded text-xl ${
-                      voteScore === value
-                        ? "bg-yellow-500 text-black"
-                        : "bg-slate-200 text-slate-700"
-                    }`}
-                  >
-                    ⭐
-                  </button>
-                ))}
-              </div>
-            )}
-
-            <div className="mb-4 text-slate-700">
-              Seleção atual:{" "}
-              <strong>{voteScore}</strong>
-            </div>
-
-            <button
-              onClick={voteCurrentSinger}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-bold"
-            >
-              Enviar Voto
-            </button>
-
-            {voteMessage && (
-              <p className="mt-3 font-bold text-slate-700">
-                {voteMessage}
-              </p>
-            )}
+            {message}
 
           </div>
 
         )}
 
-        {message && (
-          <p className="mt-4 text-green-600 font-bold">
-            {message}
-          </p>
-        )}
+      </section>
 
-      </div>
-    </main>
-  );
+      {/* Votação interativa */}
+      {eventMode === "interactive" && (
+
+        <section className="bg-white/5 border border-white/10 backdrop-blur rounded-3xl p-6 mb-6 shadow-xl">
+
+          <div className="flex items-center gap-4 mb-6">
+
+            <div className="w-14 h-14 bg-yellow-500/20 border border-yellow-500/30 rounded-2xl flex items-center justify-center text-3xl">
+
+              ⭐
+
+            </div>
+
+            <div>
+
+              <h2 className="text-2xl font-black">
+
+                Votação Interativa
+
+              </h2>
+
+              <p className="text-sm text-slate-400 mt-1">
+
+                Participe avaliando as outras apresentações.
+
+              </p>
+
+            </div>
+
+          </div>
+
+          {!currentSinger && (
+
+            <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 text-center">
+
+              <div className="text-4xl mb-3">
+                ⏳
+              </div>
+
+              <p className="font-black text-lg">
+
+                Aguardando uma apresentação
+
+              </p>
+
+              <p className="text-slate-400 mt-2">
+
+                A votação será liberada quando o operador chamar um cantor.
+
+              </p>
+
+            </div>
+
+          )}
+
+          {currentSinger &&
+            currentSinger.singer_token === token && (
+
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-6 text-center text-yellow-100">
+
+              <div className="text-4xl mb-3">
+                🎤
+              </div>
+
+              <p className="font-black text-lg">
+
+                Você está se apresentando agora
+
+              </p>
+
+              <p className="mt-2 text-yellow-200">
+
+                Você não pode avaliar a própria apresentação.
+
+              </p>
+
+            </div>
+
+          )}
+
+          {currentSinger &&
+            currentSinger.singer_token !== token && (
+
+            <div>
+
+              <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5 mb-5">
+
+                <p className="text-xs uppercase tracking-widest text-slate-400 font-bold">
+
+                  Avaliando agora
+
+                </p>
+
+                <p className="text-2xl font-black mt-2">
+
+                  🎤 {currentSinger.singer_name}
+
+                </p>
+
+                <p className="text-slate-400 mt-1">
+
+                  🎵 {currentSinger.song_name}
+
+                </p>
+
+              </div>
+
+              {votingMode === "thumbs" ? (
+
+                <div className="grid grid-cols-2 gap-4 mb-5">
+
+                  <button
+                    onClick={() => {
+                      setVoteScore(100);
+                      setVoteMessage("");
+                    }}
+                    className={`p-5 rounded-2xl text-xl font-black transition-all ${
+                      voteScore === 100
+                        ? "bg-emerald-500 text-black ring-4 ring-emerald-300/30"
+                        : "bg-slate-800 border border-slate-700 hover:border-emerald-500"
+                    }`}
+                  >
+
+                    👍 Bom
+
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setVoteScore(-1);
+                      setVoteMessage("");
+                    }}
+                    className={`p-5 rounded-2xl text-xl font-black transition-all ${
+                      voteScore === -1
+                        ? "bg-red-500 text-white ring-4 ring-red-300/30"
+                        : "bg-slate-800 border border-slate-700 hover:border-red-500"
+                    }`}
+                  >
+
+                    👎 Ruim
+
+                  </button>
+
+                </div>
+
+              ) : (
+
+                <div className="grid grid-cols-5 gap-2 mb-5">
+
+                  {[1, 2, 3, 4, 5].map(
+                    (value) => (
+
+                      <button
+                        key={value}
+                        onClick={() => {
+                          setVoteScore(value);
+                          setVoteMessage("");
+                        }}
+                        className={`p-3 md:p-4 rounded-xl text-xl transition-all ${
+                          voteScore === value
+                            ? "bg-yellow-500 text-black ring-4 ring-yellow-300/30"
+                            : "bg-slate-800 border border-slate-700 hover:border-yellow-500"
+                        }`}
+                      >
+
+                        ⭐
+
+                      </button>
+
+                    )
+                  )}
+
+                </div>
+
+              )}
+
+              <button
+                onClick={voteCurrentSinger}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-4 rounded-xl font-black transition-all"
+              >
+
+                ✅ Enviar Voto
+
+              </button>
+
+              {voteMessage && (
+
+                <div className="mt-4 bg-slate-900 border border-slate-700 rounded-xl p-4 font-bold text-center">
+
+                  {voteMessage}
+
+                </div>
+
+              )}
+
+            </div>
+
+          )}
+
+        </section>
+
+      )}
+
+      <footer className="text-center text-xs text-slate-500 py-4">
+
+        Fila Videokê • Acompanhe sua posição em tempo real
+
+      </footer>
+
+    </div>
+
+  </main>
+);
 }
