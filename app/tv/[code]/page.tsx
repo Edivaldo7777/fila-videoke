@@ -47,84 +47,244 @@ export default function TvPage({
   }, [params]);
 
   useEffect(() => {
-    if (!roomCode) return;
 
-    let channel: any;
-    let clockTimer: NodeJS.Timeout;
+  if (!roomCode) {
+    return;
+  }
 
-    async function validateAccess() {
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
+  let channel: any = null;
 
-      const { data: room } = await supabase
-        .from("rooms")
-        .select("*")
-        .eq("room_code", roomCode)
-        .single();
+  let clockTimer:
+    ReturnType<
+      typeof setInterval
+    > | null = null;
 
-      if (!room) {
-        setCheckingAccess(false);
-        return;
-      }
+  let refreshTimer:
+    ReturnType<
+      typeof setInterval
+    > | null = null;
 
-      setVotingMode(room.voting_mode || "stars");
-      setCheckingAccess(false);
+  let active = true;
 
-      if (user.role === "admin" || room.owner_id === user.id) {
-        setAuthorized(true);
-        setCheckingAccess(false);
+  async function initializeTv() {
 
-        await loadData();
+    const user = JSON.parse(
+      localStorage.getItem("user") ||
+        "{}"
+    );
 
-        clockTimer = setInterval(() => {
-          const now = new Date();
-          setClock(
-            now.toLocaleTimeString("pt-BR", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          );
-        }, 1000);
+    const {
+      data: room,
+      error: roomError,
+    } = await supabase
+      .from("rooms")
+      .select("*")
+      .eq(
+        "room_code",
+        roomCode
+      )
+      .maybeSingle();
 
-        channel = supabase
-          .channel("tv_room_updates")
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "queue", filter: `room_code=eq.${roomCode}` },
-            () => loadData()
-          )
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "current_singer", filter: `room_code=eq.${roomCode}` },
-            () => loadData()
-          )
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "singer_votes", filter: `room_code=eq.${roomCode}` },
-            () => loadData()
-          )
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "event_status", filter: `room_code=eq.${roomCode}` },
-            () => loadData()
-          )
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "rooms", filter: `room_code=eq.${roomCode}` },
-            () => loadData()
-          )
-          .subscribe();
-      }
-
-      setCheckingAccess(false);
+    if (!active) {
+      return;
     }
 
-    validateAccess();
+    if (
+      roomError ||
+      !room
+    ) {
+      console.error(
+        "Erro ao validar acesso à TV:",
+        roomError
+      );
 
-    return () => {
-      if (clockTimer) clearInterval(clockTimer);
-      if (channel) supabase.removeChannel(channel);
+      setAuthorized(false);
+      setCheckingAccess(false);
+      return;
+    }
+
+    const canAccess =
+      user.role === "admin" ||
+      room.owner_id === user.id;
+
+    if (!canAccess) {
+      setAuthorized(false);
+      setCheckingAccess(false);
+      return;
+    }
+
+    setAuthorized(true);
+
+    setVotingMode(
+      room.voting_mode ||
+        "stars"
+    );
+
+    await loadData();
+
+    if (!active) {
+      return;
+    }
+
+    setCheckingAccess(false);
+
+    const updateClock = () => {
+
+      const now =
+        new Date();
+
+      setClock(
+        now.toLocaleTimeString(
+          "pt-BR",
+          {
+            hour: "2-digit",
+            minute: "2-digit",
+          }
+        )
+      );
     };
-  }, [roomCode]);
+
+    updateClock();
+
+    clockTimer =
+      setInterval(
+        updateClock,
+        1000
+      );
+
+    /*
+     * Atualização de segurança.
+     * Mesmo que o Realtime pare,
+     * a TV recarrega os dados.
+     */
+    refreshTimer =
+      setInterval(
+        () => {
+          loadData();
+        },
+        2000
+      );
+
+    channel = supabase
+      .channel(
+        `tv_updates_${roomCode}_${Date.now()}`
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "queue",
+          filter:
+            `room_code=eq.${roomCode}`,
+        },
+        () => {
+          loadData();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table:
+            "current_singer",
+          filter:
+            `room_code=eq.${roomCode}`,
+        },
+        () => {
+          loadData();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table:
+            "singer_votes",
+          filter:
+            `room_code=eq.${roomCode}`,
+        },
+        () => {
+          loadData();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table:
+            "event_status",
+          filter:
+            `room_code=eq.${roomCode}`,
+        },
+        () => {
+          loadData();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "rooms",
+          filter:
+            `room_code=eq.${roomCode}`,
+        },
+        () => {
+          loadData();
+        }
+      )
+      .subscribe(
+        (status) => {
+
+          console.log(
+            "Status Realtime da TV:",
+            status
+          );
+
+          if (
+            status ===
+              "CHANNEL_ERROR" ||
+            status ===
+              "TIMED_OUT"
+          ) {
+            console.warn(
+              "Realtime indisponível. A TV continuará atualizando pelo temporizador."
+            );
+          }
+        }
+      );
+  }
+
+  initializeTv();
+
+  return () => {
+
+    active = false;
+
+    if (clockTimer) {
+      clearInterval(
+        clockTimer
+      );
+    }
+
+    if (refreshTimer) {
+      clearInterval(
+        refreshTimer
+      );
+    }
+
+    if (channel) {
+      supabase.removeChannel(
+        channel
+      );
+    }
+  };
+
+}, [roomCode]);
 
   async function loadVotes(singerToken: string, eventId: string) {
     const { data: performance, error: performanceError } = await supabase
