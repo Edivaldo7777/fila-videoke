@@ -351,23 +351,23 @@ if (
 
         <div className="*lex flex-col sm:flex-row sm:items-*enter sm:justify-between gap-4">
 
-*         <div>
+         <div>
 
             <div c*assName="inline-flex items-center *ap-2 bg-yellow-500/10 border borde*-yellow-500/20 text-yellow-300 px-* py-1 rounded-full text-xs font-bo*d mb-3">
 
               <span clas*Name="w-2 h-2 bg-yellow-400 rounde*-full animate-pulse" />
 
-         *    ÁREA DO JURADO
+             ÁREA DO JURADO
 
             </*iv>
 
             <h1 className="te*t-3xl md:text-5xl font-black">
 
-  *           ⭐ Olá, {voterName || "J*rado"}
+             ⭐ Olá, {voterName || "J*rado"}
 
             </h1>
 
-       *    <p className="text-slate-400 mt-2">
+           <p className="text-slate-400 mt-2">
 
               Avalie as apresentações e participe da escolha dos destaques da noite.
 
@@ -398,7 +398,7 @@ if (
       {/* Cantor atual */}
       <section className="relat*ve overflow-hidden bg-gradient-to-* from-yellow-400 via-amber-400 to-*range-500 text-black rounded-3xl p*6 md:p-8 mb-6 shadow-2xl">
 
-      * <div className="absolute -right-1* -top-16 w-52 h-52 bg-white/30 rou*ded-full blur-3xl" />
+      <div className="absolute -right-1* -top-16 w-52 h-52 bg-white/30 rou*ded-full blur-3xl" />
 
         <di* className="relative">
 
@@ -406,21 +406,21 @@ if (
 
             🎤 Cantando agora
 
- *        </p>
+         </p>
 
           <h2 classN*me="text-4xl md:text-6xl font-blac* mt-2 break-words">
 
             {*urrentSinger?.singer_name ||
-     *        "Aguardando cantor"}
+             "Aguardando cantor"}
 
-    *     </h2>
+         </h2>
 
           <p className*"text-xl md:text-2xl font-bold mt-*">
 
             🎵{" "}
 
-         *  {currentSinger?.song_name ||
-   *          "Nenhuma música em execu*ão"}
+           {currentSinger?.song_name ||
+             "Nenhuma música em execu*ão"}
 
           </p>
 
@@ -459,35 +459,35 @@ if (
 
               {votingMode ===*"thumbs"
                 ? "👍"
-  *             : "⭐"}
+               : "⭐"}
 
             <*div>
 
             <div>
 
-         *    <p className="text-xs uppercas* tracking-wider text-slate-400 fon*-bold">
+             <p className="text-xs uppercas* tracking-wider text-slate-400 fon*-bold">
 
                 Tipo de v*tação
 
               </p>
 
-       *      <p className="font-black tex*-lg mt-1">
+             <p className="font-black tex*-lg mt-1">
 
                 {votin*Mode === "thumbs"
-                * ? "Aprovação Bom ou Ruim"
-       *          : "Avaliação por Estrela*"}
+                 ? "Aprovação Bom ou Ruim"
+                : "Avaliação por Estrela*"}
 
               </p>
 
-          * </div>
+           </div>
 
           </div>
 
-       *</div>
+       </div>
 
         <div className="bg*white/5 border border-white/10 rou*ded-2xl p-5 shadow-xl">
 
-         *<div className="flex items-center *ap-4">
+         <div className="flex items-center *ap-4">
 
             <div className*"w-12 h-12 bg-blue-500/20 border b*rder-blue-500/30 rounded-2xl flex items-center justify-center text-2xl">
 
