@@ -64,9 +64,7 @@ useEffect(() => {
 
   let channel: any = null;
 
-  let refreshTimer:
-    ReturnType<typeof setInterval> |
-    null = null;
+  let refreshTimer: number | null = null;
 
   let active = true;
 
@@ -155,11 +153,11 @@ useEffect(() => {
 
     active = false;
 
-    if (refreshTimer) {
-      window.clearInterval(
-        refreshTimer
-      );
-    }
+    if (refreshTimer !== null) {
+  window.clearInterval(
+    refreshTimer
+  );
+}
 
     if (channel) {
       supabase.removeChannel(
@@ -168,7 +166,11 @@ useEffect(() => {
     }
   };
 
-}, [roomCode, voterToken]);
+}, [
+  roomCode,
+  voterToken,
+  currentPerformanceToken,
+]);
 
   async function loadCurrentSinger() {
     if (!roomCode) {
