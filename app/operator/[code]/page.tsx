@@ -798,7 +798,6 @@ export default function OperatorPage({
   }
 
   return (
-    return (
   <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black text-white">
 
     <div className="max-w-7xl mx-auto p-4 md:p-8">
