@@ -99,23 +99,53 @@ export default function AdminPage() {
     loadUsers();
   }
 
-  async function resetPassword(id: string) {
-    const newPassword = prompt("Digite a nova senha:");
+  async function resetPassword(
+  user: any
+) {
 
-    if (!newPassword) {
-      return;
-    }
-
-    await supabase
-      .from("users")
-      .update({
-        password: newPassword,
-      })
-      .eq("id", id);
-
-    alert("Senha alterada com sucesso.");
-    loadUsers();
+  if (!user?.email) {
+    alert(
+      "Este cliente não possui um e-mail válido."
+    );
+    return;
   }
+
+  const confirmed = confirm(
+    `Enviar um link de redefinição de senha para ${user.email}?`
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  const redirectTo =
+    `${window.location.origin}/auth/update-password`;
+
+  const { error } =
+    await supabase.auth
+      .resetPasswordForEmail(
+        user.email.trim().toLowerCase(),
+        {
+          redirectTo,
+        }
+      );
+
+  if (error) {
+    console.error(
+      "Erro ao enviar redefinição:",
+      error
+    );
+
+    alert(
+      `Não foi possível enviar o link: ${error.message}`
+    );
+    return;
+  }
+
+  alert(
+    `Link de redefinição enviado para ${user.email}.`
+  );
+}
 
   async function deleteUser(user: any) {
     const confirmed = confirm(`Excluir ${user.name}?`);
@@ -775,13 +805,13 @@ export default function AdminPage() {
                     <button
                       onClick={() =>
                         resetPassword(
-                          user.id
-                        )
-                      }
+                        user
+                      )
+                    }
                       className="bg-purple-600/20 hover:bg-purple-600 border border-purple-500/30 text-purple-200 hover:text-white px-4 py-3 rounded-xl text-sm font-black transition-all"
                     >
 
-                      🔑 Resetar Senha
+                      🔑 Enviar Redefinição
 
                     </button>
 
