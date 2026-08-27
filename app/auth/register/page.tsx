@@ -15,61 +15,133 @@ export default function RegisterPage() {
   const [isSuccess, setIsSuccess] = useState(false);
 
   async function register() {
-    if (!name.trim() || !email.trim() || !password.trim()) {
-      setMessage("Preencha todos os campos.");
-      return;
-    }
 
-    if (password.length < 6) {
-      setMessage("A senha deve ter pelo menos 6 caracteres.");
-      return;
-    }
-
-    setIsLoading(true);
-    setMessage("");
-
-    try {
-      // 1. Cria o usuário no sistema seguro de Autenticação do Supabase
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: email.trim(),
-        password: password.trim(),
-      });
-
-      if (authError) {
-        setMessage(authError.message);
-        setIsLoading(false);
-        return;
-      }
-
-      // 2. Insere os dados do perfil na sua tabela customizada para o Painel Master gerenciar
-      const { error: insertError } = await supabase.from("users").insert({
-        name: name.trim(),
-        email: email.trim(),
-        password: password.trim(), // Mantido temporariamente para compatibilidade
-        role: "client",
-        status: "pending",
-        max_rooms: 1,
-      });
-
-      if (insertError) {
-        // Se der erro ao inserir na tabela, desfaz o cadastro de auth por segurança
-        console.error("Erro ao inserir perfil:", insertError);
-        setMessage("Ocorreu um erro ao salvar seu perfil. Tente novamente.");
-        setIsLoading(false);
-        return;
-      }
-
-      setIsSuccess(true);
-      setName("");
-      setEmail("");
-      setPassword("");
-
-    } catch (error) {
-      console.error(error);
-      setMessage("Ocorreu um erro inesperado.");
-      setIsLoading(false);
-    }
+  if (isLoading) {
+    return;
   }
+
+  const normalizedName =
+    name.trim();
+
+  const normalizedEmail =
+    email.trim().toLowerCase();
+
+  if (
+    !normalizedName ||
+    !normalizedEmail ||
+    !password
+  ) {
+    setMessage(
+      "Preencha todos os campos."
+    );
+    return;
+  }
+
+  if (password.length < 8) {
+    setMessage(
+      "A senha deve ter pelo menos 8 caracteres."
+    );
+    return;
+  }
+
+  setIsLoading(true);
+  setMessage("");
+
+  try {
+
+    const {
+      data: authData,
+      error: authError,
+    } = await supabase.auth
+      .signUp({
+        email:
+          normalizedEmail,
+
+        password,
+
+        options: {
+          data: {
+            name:
+              normalizedName,
+          },
+
+          emailRedirectTo:
+            `${window.location.origin}/auth/login`,
+        },
+      });
+
+    if (authError) {
+      console.error(
+        "Erro no cadastro:",
+        authError
+      );
+
+      const authMessage =
+        authError.message
+          .toLowerCase();
+
+      if (
+        authMessage.includes(
+          "email rate limit exceeded"
+        ) ||
+        authError.status === 429
+      ) {
+        setMessage(
+          "Muitos e-mails foram enviados em pouco tempo. Aguarde alguns minutos e tente novamente."
+        );
+        return;
+      }
+
+      if (
+        authMessage.includes(
+          "already registered"
+        ) ||
+        authMessage.includes(
+          "already exists"
+        )
+      ) {
+        setMessage(
+          "Este e-mail já possui uma conta. Faça login ou utilize a recuperação de senha."
+        );
+        return;
+      }
+
+      setMessage(
+        authError.message
+      );
+      return;
+    }
+
+    if (!authData.user) {
+      setMessage(
+        "Não foi possível concluir o cadastro."
+      );
+      return;
+    }
+
+    setIsSuccess(true);
+    setName("");
+    setEmail("");
+    setPassword("");
+
+  } catch (error: any) {
+
+    console.error(
+      "Erro inesperado no cadastro:",
+      error
+    );
+
+    setMessage(
+      error?.message ||
+        "Ocorreu um erro inesperado."
+    );
+
+  } finally {
+
+    setIsLoading(false);
+
+  }
+}
 
   return (
     <main className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
