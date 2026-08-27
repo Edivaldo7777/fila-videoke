@@ -79,7 +79,69 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   }
+  async function forgotPassword() {
+  const normalizedEmail =
+    email.trim().toLowerCase();
 
+  if (!normalizedEmail) {
+    setMessage(
+      "Informe seu e-mail para recuperar a senha."
+    );
+    return;
+  }
+
+  const confirmed = confirm(
+    `Enviar um link de redefinição de senha para ${normalizedEmail}?`
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  setIsLoading(true);
+  setMessage("");
+
+  try {
+    const redirectTo =
+      `${window.location.origin}/auth/update-password`;
+
+    const { error } =
+      await supabase.auth
+        .resetPasswordForEmail(
+          normalizedEmail,
+          {
+            redirectTo,
+          }
+        );
+
+    if (error) {
+      console.error(
+        "Erro ao recuperar senha:",
+        error
+      );
+
+      setMessage(
+        `Não foi possível enviar o link: ${error.message}`
+      );
+      return;
+    }
+
+    setMessage(
+      "✅ Se o e-mail estiver cadastrado, você receberá um link para criar uma nova senha."
+    );
+  } catch (error) {
+    console.error(
+      "Erro inesperado na recuperação:",
+      error
+    );
+
+    setMessage(
+      "Não foi possível solicitar a recuperação de senha."
+    );
+  } finally {
+    setIsLoading(false);
+  }
+}
   return (
     <main className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
       <div className="bg-white p-8 rounded-xl shadow-xl w-full max-w-md">
@@ -105,10 +167,16 @@ export default function LoginPage() {
         />
 
         {message && (
-          <div className="text-red-500 text-sm font-bold text-center mb-4">
-            {message}
-          </div>
-        )}
+  <div
+    className={`text-sm font-bold text-center mb-4 rounded-xl border p-3 ${
+      message.startsWith("✅")
+        ? "bg-green-50 border-green-200 text-green-700"
+        : "bg-red-50 border-red-200 text-red-600"
+    }`}
+  >
+    {message}
+  </div>
+)}
 
         <button
           onClick={login}
@@ -117,7 +185,14 @@ export default function LoginPage() {
         >
           {isLoading ? "Entrando..." : "Entrar"}
         </button>
-
+         <button
+          type="button"
+          onClick={forgotPassword}
+          disabled={isLoading}
+          className="w-full mt-4 text-purple-600 hover:text-purple-800 font-bold text-sm transition-colors disabled:opacity-50"
+        >
+              🔑 Esqueci minha senha
+        </button>
         <div className="mt-6 text-center text-sm">
           <button
             onClick={() => router.push("/auth/register")}
