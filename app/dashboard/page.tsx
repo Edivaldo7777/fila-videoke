@@ -267,34 +267,61 @@ export default function Dashboard() {
   }
 
   async function changePassword() {
-    const currentPassword = prompt("Digite sua senha atual:");
-    if (!currentPassword) return;
 
-    if (currentPassword !== currentUser.password) {
-      alert("Senha atual incorreta.");
-      return;
-    }
+  const newPassword = prompt(
+    "Digite sua nova senha:"
+  );
 
-    const newPassword = prompt("Digite sua nova senha:");
-    if (!newPassword) return;
-
-    const confirmPassword = prompt("Confirme a nova senha:");
-    if (newPassword !== confirmPassword) {
-      alert("As senhas não conferem.");
-      return;
-    }
-
-    await supabase
-      .from("users")
-      .update({ password: newPassword })
-      .eq("id", currentUser.id);
-
-    const updatedUser = { ...currentUser, password: newPassword };
-    localStorage.setItem("user", JSON.stringify(updatedUser));
-    setCurrentUser(updatedUser);
-
-    alert("Senha alterada com sucesso.");
+  if (!newPassword) {
+    return;
   }
+
+  if (
+    newPassword.length < 8
+  ) {
+    alert(
+      "A nova senha deve possuir pelo menos 8 caracteres."
+    );
+    return;
+  }
+
+  const confirmPassword = prompt(
+    "Confirme sua nova senha:"
+  );
+
+  if (
+    newPassword !==
+    confirmPassword
+  ) {
+    alert(
+      "As senhas não conferem."
+    );
+    return;
+  }
+
+  const { error } =
+    await supabase.auth
+      .updateUser({
+        password:
+          newPassword,
+      });
+
+  if (error) {
+    console.error(
+      "Erro ao alterar senha:",
+      error
+    );
+
+    alert(
+      `Não foi possível alterar a senha: ${error.message}`
+    );
+    return;
+  }
+
+  alert(
+    "Senha alterada com sucesso."
+  );
+}
 
   const roomUrl =
   roomCode !== "" &&
