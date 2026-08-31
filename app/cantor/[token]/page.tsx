@@ -12,8 +12,6 @@ export default function CantorPage({
 
   const [singerName, setSingerName] = useState("");
   const [roomCode, setRoomCode] = useState("");
-  const [currentEventId, setCurrentEventId] =
-    useState<string | null>(null);
   const [eventMode, setEventMode] = useState("traditional");
   const [votingMode, setVotingMode] = useState("stars"); // Novo estado para o modo de voto
   const [nextSong, setNextSong] = useState("");
@@ -117,589 +115,268 @@ export default function CantorPage({
   }, [token]);
 
   async function loadSinger() {
-  if (!token) {
-    return;
-  }
-
-  const {
-    data: profile,
-    error: profileError,
-  } = await supabase
-    .from("singer_profile")
-    .select("*")
-    .eq("singer_token", token)
-    .maybeSingle();
-
-  if (profileError || !profile) {
-    if (profileError) {
-      console.error(
-        "Erro ao carregar cantor:",
-        profileError
-      );
-    }
-
-    return;
-  }
-
-  setSingerName(profile.singer_name);
-  setRoomCode(profile.room_code);
-
-  const {
-    data: room,
-    error: roomError,
-  } = await supabase
-    .from("rooms")
-    .select(
-      "room_code, current_event_id, event_mode, voting_mode, status"
-    )
-    .eq("room_code", profile.room_code)
-    .maybeSingle();
-
-  if (roomError || !room) {
-    console.error(
-      "Erro ao carregar sala:",
-      roomError
-    );
-
-    setCurrentEventId(null);
-    setCurrentSinger(null);
-    setPosition(null);
-    return;
-  }
-
-  setEventMode(
-    room.event_mode || "traditional"
-  );
-
-  setVotingMode(
-    room.voting_mode || "stars"
-  );
-
-  const ended =
-    room.status === "encerrada";
-
-  setEventEnded(ended);
-
-  if (
-    ended ||
-    !room.current_event_id
-  ) {
-    setCurrentEventId(null);
-    setCurrentSinger(null);
-    setPosition(null);
-    setVoteScore(0);
-    setVoteMessage("");
-    return;
-  }
-
-  const eventId =
-    room.current_event_id;
-
-  setCurrentEventId(eventId);
-
-  if (
-    profile.event_id !==
-    eventId
-  ) {
-    console.warn(
-      "O perfil do cantor pertence a outro evento."
-    );
-
-    setCurrentSinger(null);
-    setPosition(null);
-    setVoteScore(0);
-    setVoteMessage(
-      "Sua participação pertence a um evento anterior."
-    );
-    return;
-  }
-
-  setNextSong(
-    (currentValue) => {
-      if (
-        currentValue === "" &&
-        profile.next_song
-      ) {
-        return profile.next_song;
-      }
-
-      return currentValue;
-    }
-  );
-
-  const {
-    data: queueData,
-    error: queueError,
-  } = await supabase
-    .from("queue")
-    .select("*")
-    .eq(
-      "room_code",
-      profile.room_code
-    )
-    .eq(
-      "event_id",
-      eventId
-    )
-    .order("created_at", {
-      ascending: true,
-    });
-
-  if (queueError) {
-    console.error(
-      "Erro ao carregar fila:",
-      queueError
-    );
-
-    setPosition(null);
-  } else {
-    const queueItems =
-      queueData || [];
-
-    const index =
-      queueItems.findIndex(
-        (item: any) =>
-          item.singer_token ===
-          token
-      );
-
-    setPosition(
-      index >= 0
-        ? index + 1
-        : null
-    );
-  }
-
-  const {
-    data: current,
-    error: currentError,
-  } = await supabase
-    .from("current_singer")
-    .select("*")
-    .eq(
-      "room_code",
-      profile.room_code
-    )
-    .eq(
-      "event_id",
-      eventId
-    )
-    .maybeSingle();
-
-  if (currentError) {
-    console.error(
-      "Erro ao carregar cantor atual:",
-      currentError
-    );
-
-    setCurrentSinger(null);
-    return;
-  }
-
-  setCurrentSinger(
-    current || null
-  );
-
-  if (!current) {
-    setVoteScore(0);
-    setVoteMessage("");
-  }
-}
-
-async function saveNextSong() {
-  if (!currentEventId) {
-    setMessage(
-      "Esta sala não possui um evento ativo."
-    );
-    return;
-  }
-
-  const normalizedSong =
-    nextSong.trim();
-
-  if (!normalizedSong) {
-    setMessage(
-      "Informe o nome da próxima música."
-    );
-    return;
-  }
-
-  const { error } =
-    await supabase
-      .from("singer_profile")
-      .update({
-        next_song:
-          normalizedSong,
-      })
-      .eq(
-        "singer_token",
-        token
-      )
-      .eq(
-        "room_code",
-        roomCode
-      )
-      .eq(
-        "event_id",
-        currentEventId
-      );
-
-  if (error) {
-    console.error(
-      "Erro ao salvar próxima música:",
-      error
-    );
-
-    setMessage(error.message);
-    return;
-  }
-
-  setMessage(
-    "✅ Próxima música salva com sucesso!"
-  );
-
-  await loadSinger();
-}
-
-async function becomeJuror() {
-  if (
-    eventMode !== "interactive"
-  ) {
-    alert(
-      "A troca de participação está disponível somente no modo interativo."
-    );
-    return;
-  }
-
-  if (!currentEventId) {
-    alert(
-      "Esta sala não possui um evento ativo."
-    );
-    return;
-  }
-
-  if (
-    currentSinger?.singer_token ===
-    token
-  ) {
-    alert(
-      "Você está se apresentando neste momento."
-    );
-    return;
-  }
-
-  if (position === 1) {
-    alert(
-      "Você é o próximo da fila e não pode sair agora."
-    );
-    return;
-  }
-
-  const confirmed = confirm(
-    "Você perderá sua posição na fila e passará a atuar como jurado. Deseja continuar?"
-  );
-
-  if (!confirmed) {
-    return;
-  }
-
-  const voterToken =
-    crypto.randomUUID();
-
-  const {
-    error: voterError,
-  } = await supabase
-    .from("voters")
-    .insert({
-      room_code:
-        roomCode,
-
-      event_id:
-        currentEventId,
-
-      voter_token:
-        voterToken,
-
-      voter_name:
-        singerName,
-    });
-
-  if (voterError) {
-    console.error(
-      "Erro ao criar jurado:",
-      voterError
-    );
-
-    alert(voterError.message);
-    return;
-  }
-
-  const {
-    error: queueError,
-  } = await supabase
-    .from("queue")
-    .delete()
-    .eq(
-      "room_code",
-      roomCode
-    )
-    .eq(
-      "event_id",
-      currentEventId
-    )
-    .eq(
-      "singer_token",
-      token
-    );
-
-  if (queueError) {
-    console.error(
-      "Erro ao remover cantor da fila:",
-      queueError
-    );
-
-    alert(queueError.message);
-    return;
-  }
-
-  const {
-    error: profileError,
-  } = await supabase
-    .from("singer_profile")
-    .delete()
-    .eq(
-      "singer_token",
-      token
-    )
-    .eq(
-      "room_code",
-      roomCode
-    )
-    .eq(
-      "event_id",
-      currentEventId
-    );
-
-  if (profileError) {
-    console.error(
-      "Erro ao remover perfil do cantor:",
-      profileError
-    );
-
-    alert(profileError.message);
-    return;
-  }
-
-  window.location.href =
-    `/jurado/${voterToken}`;
-}
-
-async function voteCurrentSinger() {
-  setVoteMessage("");
-
-  if (
-    eventMode !== "interactive"
-  ) {
-    setVoteMessage(
-      "A votação por cantores está disponível apenas no modo interativo."
-    );
-    return;
-  }
-
-  if (!currentEventId) {
-    setVoteMessage(
-      "Esta sala não possui um evento ativo."
-    );
-    return;
-  }
-
-  if (!currentSinger) {
-    setVoteMessage(
-      "Nenhum cantor está se apresentando."
-    );
-    return;
-  }
-
-  if (
-    currentSinger.event_id !==
-    currentEventId
-  ) {
-    setVoteMessage(
-      "A apresentação não pertence ao evento atual."
-    );
-
-    await loadSinger();
-    return;
-  }
-
-  if (
-    currentSinger.singer_token ===
-    token
-  ) {
-    setVoteMessage(
-      "Você não pode votar na própria apresentação."
-    );
-    return;
-  }
-
-  if (
-    votingMode === "stars" &&
-    voteScore === 0
-  ) {
-    setVoteMessage(
-      "Selecione uma nota."
-    );
-    return;
-  }
-
-  if (
-    votingMode === "thumbs" &&
-    voteScore !== 100 &&
-    voteScore !== -1
-  ) {
-    setVoteMessage(
-      "Escolha Bom ou Ruim."
-    );
-    return;
-  }
-
-  const {
-    data: performance,
-    error: performanceError,
-  } = await supabase
-    .from("performances")
-    .select("*")
-    .eq(
-      "room_code",
-      roomCode
-    )
-    .eq(
-      "event_id",
-      currentEventId
-    )
-    .eq(
-      "singer_token",
-      currentSinger.singer_token
-    )
-    .order("created_at", {
-      ascending: false,
-    })
-    .limit(1)
-    .maybeSingle();
-
-  if (
-    performanceError ||
-    !performance
-  ) {
-    console.error(
-      "Erro ao localizar apresentação:",
-      performanceError
-    );
-
-    setVoteMessage(
-      "A apresentação atual ainda não foi registrada."
-    );
-    return;
-  }
-
-  const {
-    data: existingVote,
-    error: existingVoteError,
-  } = await supabase
-    .from("singer_votes")
-    .select("id")
-    .eq(
-      "room_code",
-      roomCode
-    )
-    .eq(
-      "event_id",
-      currentEventId
-    )
-    .eq(
-      "performance_id",
-      performance.id
-    )
-    .eq(
-      "voter_token",
-      token
-    )
-    .maybeSingle();
-
-  if (existingVoteError) {
-    console.error(
-      "Erro ao verificar voto:",
-      existingVoteError
-    );
-
-    setVoteMessage(
-      "Não foi possível verificar seu voto."
-    );
-    return;
-  }
-
-  if (existingVote) {
-    setVoteMessage(
-      "Você já votou nesta apresentação."
-    );
-    return;
-  }
-
-  const finalScore =
-    votingMode === "thumbs" &&
-    voteScore === -1
-      ? 0
-      : voteScore;
-
-  const { error } =
-    await supabase
-      .from("singer_votes")
-      .insert({
-        room_code:
-          roomCode,
-
-        event_id:
-          currentEventId,
-
-        performance_id:
-          performance.id,
-
-        singer_token:
-          currentSinger.singer_token,
-
-        voter_token:
-          token,
-
-        voter_type:
-          "singer",
-
-        score:
-          finalScore,
-      });
-
-  if (error) {
-    console.error(
-      "Erro ao registrar voto:",
-      error
-    );
-
-    if (error.code === "23505") {
-      setVoteMessage(
-        "Você já votou nesta apresentação."
-      );
+    if (!token) {
       return;
     }
 
-    setVoteMessage(error.message);
-    return;
+    const { data, error: profileError } = await supabase
+      .from("singer_profile")
+      .select("*")
+      .eq("singer_token", token)
+      .maybeSingle();
+
+    if (profileError || !data) {
+      if (profileError) {
+        console.error("Erro ao carregar cantor:", profileError);
+      }
+      return;
+    }
+
+    setSingerName(data.singer_name);
+    setRoomCode(data.room_code);
+
+    const { data: room, error: roomError } = await supabase
+      .from("rooms")
+      .select("*")
+      .eq("room_code", data.room_code)
+      .single();
+
+    if (roomError || !room) {
+      console.error("Erro ao carregar sala:", roomError);
+      return;
+    }
+
+    setEventMode(room.event_mode || "traditional");
+    setVotingMode(room.voting_mode || "stars"); // Carrega o modo de votação da sala
+
+    const ended = room.status === "encerrada";
+    setEventEnded(ended);
+
+    if (ended) {
+      setCurrentSinger(null);
+      setPosition(null);
+      setVoteScore(0);
+      setVoteMessage("");
+      return;
+    }
+
+    const eventId = room.current_event_id;
+
+    setNextSong((currentValue) => {
+      if (currentValue === "" && data.next_song) {
+        return data.next_song;
+      }
+      return currentValue;
+    });
+
+    const { data: queueData, error: queueError } = await supabase
+      .from("queue")
+      .select("*")
+      .eq("room_code", data.room_code)
+      .order("created_at");
+
+    if (queueError) {
+      console.error("Erro ao carregar fila:", queueError);
+    }
+
+    if (queueData) {
+      const index = queueData.findIndex(
+        (item: any) => item.singer_token === token
+      );
+
+      if (index >= 0) {
+        setPosition(index + 1);
+      } else {
+        setPosition(null);
+      }
+    } else {
+      setPosition(null);
+    }
+
+    if (!eventId) {
+      setCurrentSinger(null);
+      setVoteScore(0);
+      setVoteMessage("");
+      return;
+    }
+
+    const { data: current, error: currentError } = await supabase
+      .from("current_singer")
+      .select("*")
+      .eq("room_code", data.room_code)
+      .eq("event_id", eventId)
+      .maybeSingle();
+
+    if (currentError) {
+      console.error("Erro ao carregar cantor atual:", currentError);
+      setCurrentSinger(null);
+      return;
+    }
+
+    setCurrentSinger(current || null);
+
+    if (!current) {
+      setVoteScore(0);
+      setVoteMessage("");
+    }
   }
 
-  setVoteMessage(
-    "✅ Voto registrado com sucesso."
-  );
+  async function saveNextSong() {
+    const { error } = await supabase
+      .from("singer_profile")
+      .update({
+        next_song: nextSong,
+      })
+      .eq("singer_token", token);
 
-  setVoteScore(0);
-}
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    setMessage("✅ Próxima música salva com sucesso!");
+    loadSinger();
+  }
+  
+  async function becomeJuror() {
+    if (currentSinger?.singer_token === token) {
+      alert("Você está se apresentando neste momento.");
+      return;
+    }
+
+    if (position === 1) {
+      alert("Você é o próximo da fila e não pode sair agora.");
+      return;
+    }
+
+    const confirmed = confirm(
+      "Você perderá sua posição na fila e passará a atuar como jurado. Deseja continuar?"
+    );
+
+    if (!confirmed) return;
+
+    const voterToken = crypto.randomUUID();
+
+    const { error: voterError } = await supabase
+      .from("voters")
+      .insert({
+        room_code: roomCode,
+        voter_token: voterToken,
+        voter_name: singerName,
+      });
+
+    if (voterError) {
+      alert(voterError.message);
+      return;
+    }
+
+    const { error: queueError } = await supabase
+      .from("queue")
+      .delete()
+      .eq("singer_token", token);
+
+    if (queueError) {
+      alert(queueError.message);
+      return;
+    }
+
+    const { error: profileError } = await supabase
+      .from("singer_profile")
+      .delete()
+      .eq("singer_token", token);
+
+    if (profileError) {
+      alert(profileError.message);
+      return;
+    }
+
+    window.location.href = `/jurado/${voterToken}`;
+  }
+  
+  async function voteCurrentSinger() {
+    setVoteMessage("");
+
+    if (eventMode !== "interactive") {
+      setVoteMessage("A votação por cantores está disponível apenas no modo interativo.");
+      return;
+    }
+
+    if (!currentSinger) {
+      setVoteMessage("Nenhum cantor está se apresentando.");
+      return;
+    }
+
+    if (currentSinger.singer_token === token) {
+      setVoteMessage("Você não pode votar na própria apresentação.");
+      return;
+    }
+
+    if (votingMode === "stars" && voteScore === 0) {
+      setVoteMessage("Selecione uma nota.");
+      return;
+    }
+
+    const { data: performance, error: performanceError } = await supabase
+      .from("performances")
+      .select("*")
+      .eq("room_code", roomCode)
+      .eq("event_id", currentSinger.event_id)
+      .eq("singer_token", currentSinger.singer_token)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (performanceError || !performance) {
+      console.error("Erro ao localizar apresentação:", performanceError);
+      setVoteMessage("A apresentação atual ainda não foi registrada.");
+      return;
+    }
+
+    const { data: existingVote, error: existingVoteError } = await supabase
+      .from("singer_votes")
+      .select("id")
+      .eq("performance_id", performance.id)
+      .eq("voter_token", token)
+      .maybeSingle();
+
+    if (existingVoteError) {
+      console.error("Erro ao verificar voto:", existingVoteError);
+      setVoteMessage("Não foi possível verificar seu voto.");
+      return;
+    }
+
+    if (existingVote) {
+      setVoteMessage("Você já votou nesta apresentação.");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("singer_votes")
+      .insert({
+        room_code: roomCode,
+        event_id: performance.event_id,
+        performance_id: performance.id,
+        singer_token: currentSinger.singer_token,
+        voter_token: token,
+        voter_type: "singer",
+        score: voteScore,
+      });
+
+    if (error) {
+      console.error("Erro ao registrar voto:", error);
+
+      if (error.code === "23505") {
+        setVoteMessage("Você já votou nesta apresentação.");
+        return;
+      }
+
+      setVoteMessage(error.message);
+      return;
+    }
+
+    setVoteMessage("✅ Voto registrado com sucesso.");
+    setVoteScore(0);
+  }
 
   const singersAhead = position && position > 1 ? position - 1 : 0;
   const estimatedMinutes = singersAhead * 5;
