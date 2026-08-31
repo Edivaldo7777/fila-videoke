@@ -24,335 +24,134 @@ export default function RoomPage({
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [mode, setMode] = useState<"singer" | "voter" | null>(null);
   const [eventMode, setEventMode] = useState("traditional");
-  const [currentEventId, setCurrentEventId] =
-  useState<string | null>(null);
-
-  const [roomActive, setRoomActive] =
-  useState(false);
 
   useEffect(() => {
-  async function init() {
-    const route = await params;
+    async function init() {
+      const room = await params;
+      setRoomCode(room.code);
 
-    setRoomCode(
-      route.code
-    );
+      const { data } = await supabase
+        .from("rooms")
+        .select("*")
+        .eq("room_code", room.code)
+        .single();
 
-    const {
-      data: room,
-      error: roomError,
-    } = await supabase
-      .from("rooms")
-      .select(
-        "room_code, event_mode, current_event_id, status"
-      )
-      .eq(
-        "room_code",
-        route.code
-      )
-      .maybeSingle();
+      if (data) {
+        setEventMode(data.event_mode || "traditional");
+      }
+    }
 
-    if (
-      roomError ||
-      !room
-    ) {
-      console.error(
-        "Erro ao localizar sala:",
-        roomError
-      );
+    init();
+  }, [params]);
 
-      setRoomActive(false);
-      setCurrentEventId(null);
+  // Supabase Realtime para atualizar a fila instantaneamente
+  useEffect(() => {
+    if (!roomCode) return;
 
-      alert(
-        "Sala não encontrada."
-      );
+    let channel: any;
+
+    async function initializeRoom() {
+      await loadQueue();
+
+      channel = supabase
+        .channel("room_queue_updates")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "queue", filter: `room_code=eq.${roomCode}` },
+          () => loadQueue()
+        )
+        .subscribe();
+    }
+
+    initializeRoom();
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [roomCode]);
+
+  async function loadQueue() {
+    const { data, error } = await supabase
+      .from("queue")
+      .select("*")
+      .eq("room_code", roomCode)
+      .order("created_at");
+
+    if (error) {
+      console.error(error);
       return;
     }
 
-    setEventMode(
-      room.event_mode ||
-        "traditional"
-    );
-
-    setCurrentEventId(
-      room.current_event_id ||
-        null
-    );
-
-    setRoomActive(
-      room.status === "ao_vivo" &&
-      Boolean(
-        room.current_event_id
-      )
-    );
+    setQueue(data || []);
   }
 
-  init();
-}, [params]);
-
-  // Supabase Realtime para atualizar a fila instantaneamente
-useEffect(() => {
-  if (!roomCode || !currentEventId) {
-    return;
-  }
-
-  let channel: any = null;
-
-  async function initializeRoom() {
-    await loadQueue();
-
-    channel = supabase
-      .channel(
-        `room_queue_updates_${roomCode}_${currentEventId}`
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "queue",
-          filter: `room_code=eq.${roomCode}`,
-        },
-        () => {
-          loadQueue();
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "rooms",
-          filter: `room_code=eq.${roomCode}`,
-        },
-        async () => {
-          const {
-            data: room,
-            error: roomError,
-          } = await supabase
-            .from("rooms")
-            .select(
-              "current_event_id, status, event_mode"
-            )
-            .eq("room_code", roomCode)
-            .maybeSingle();
-
-          if (roomError || !room) {
-            console.error(
-              "Erro ao atualizar sala:",
-              roomError
-            );
-            return;
-          }
-
-          setEventMode(
-            room.event_mode || "traditional"
-          );
-
-          setCurrentEventId(
-            room.current_event_id || null
-          );
-
-          setRoomActive(
-            room.status === "ao_vivo" &&
-              Boolean(room.current_event_id)
-          );
-        }
-      )
-      .subscribe((status) => {
-        console.log(
-          "Status Realtime da sala:",
-          status
-        );
-      });
-  }
-
-  initializeRoom();
-
-  const refreshTimer = window.setInterval(
-    () => {
-      loadQueue();
-    },
-    3000
-  );
-
-  return () => {
-    window.clearInterval(refreshTimer);
-
-    if (channel) {
-      supabase.removeChannel(channel);
+  async function addToQueue() {
+    if (!name.trim() || !song.trim()) {
+      alert("Informe nome e música.");
+      return;
     }
-  };
-}, [roomCode, currentEventId]);
 
-async function loadQueue() {
-  if (!roomCode || !currentEventId) {
-    setQueue([]);
-    return;
-  }
+    const token = uuidv4();
 
-  const { data, error } = await supabase
-    .from("queue")
-    .select("*")
-    .eq("room_code", roomCode)
-    .eq("event_id", currentEventId)
-    .order("created_at", {
-      ascending: true,
-    });
-
-  if (error) {
-    console.error(
-      "Erro ao carregar fila:",
-      error
-    );
-    return;
-  }
-
-  setQueue(data || []);
-}
-
-async function addToQueue() {
-  if (!roomActive || !currentEventId) {
-    alert(
-      "Esta sala não possui um evento ativo."
-    );
-    return;
-  }
-
-  const normalizedName = name.trim();
-  const normalizedSong = song.trim();
-
-  if (!normalizedName || !normalizedSong) {
-    alert("Informe nome e música.");
-    return;
-  }
-
-  const token = uuidv4();
-
-  const { error: profileError } =
-    await supabase
+    const profileResult = await supabase
       .from("singer_profile")
       .insert({
         singer_token: token,
-        singer_name: normalizedName,
+        singer_name: name.trim(),
         room_code: roomCode,
-        event_id: currentEventId,
-        next_song: normalizedSong,
+        next_song: song.trim(),
         participant_type: "singer",
       });
 
-  if (profileError) {
-    console.error(
-      "Erro ao criar perfil do cantor:",
-      profileError
-    );
+    if (profileResult.error) {
+      alert(profileResult.error.message);
+      return;
+    }
 
-    alert(profileError.message);
-    return;
-  }
-
-  const { error: queueError } =
-    await supabase
+    const queueResult = await supabase
       .from("queue")
       .insert({
         room_code: roomCode,
-        event_id: currentEventId,
-        singer_name: normalizedName,
-        song_name: normalizedSong,
+        singer_name: name.trim(),
+        song_name: song.trim(),
         singer_token: token,
       });
 
-  if (queueError) {
-    console.error(
-      "Erro ao entrar na fila:",
-      queueError
-    );
-
-    const { error: rollbackError } =
-      await supabase
-        .from("singer_profile")
-        .delete()
-        .eq("singer_token", token)
-        .eq("room_code", roomCode)
-        .eq("event_id", currentEventId);
-
-    if (rollbackError) {
-      console.error(
-        "Erro ao desfazer perfil:",
-        rollbackError
-      );
+    if (queueResult.error) {
+      alert(queueResult.error.message);
+      return;
     }
 
-    alert(queueError.message);
-    return;
+    // Redireciona o usuário para a tela dele como cantor
+    router.push(`/cantor/${token}`);
   }
 
-  router.push(`/cantor/${token}`);
-}
+  async function registerVoter() {
+    if (!name.trim()) {
+      alert("Informe seu nome.");
+      return;
+    }
 
-async function registerVoter() {
-  if (!roomActive || !currentEventId) {
-    alert(
-      "Esta sala não possui um evento ativo."
-    );
-    return;
+    const voterToken = uuidv4();
+
+    const result = await supabase
+      .from("voters")
+      .insert({
+        room_code: roomCode,
+        voter_token: voterToken,
+        voter_name: name.trim(),
+      });
+
+    if (result.error) {
+      alert(result.error.message);
+      return;
+    }
+
+    // Redireciona o usuário para a tela dele como jurado
+    router.push(`/jurado/${voterToken}`);
   }
-
-  const normalizedName = name.trim();
-
-  if (!normalizedName) {
-    alert("Informe seu nome.");
-    return;
-  }
-
-  const voterToken = uuidv4();
-
-  const { error } = await supabase
-    .from("voters")
-    .insert({
-      room_code: roomCode,
-      event_id: currentEventId,
-      voter_token: voterToken,
-      voter_name: normalizedName,
-    });
-
-  if (error) {
-    console.error(
-      "Erro ao cadastrar jurado:",
-      error
-    );
-
-    alert(error.message);
-    return;
-  }
-
-  router.push(`/jurado/${voterToken}`);
-}
-
-if (roomCode && !roomActive) {
-  return (
-    <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
-      <div className="w-full max-w-lg bg-white/5 border border-white/10 rounded-3xl p-8 text-center shadow-2xl">
-        <div className="text-7xl mb-5">
-          🔒
-        </div>
-
-        <h1 className="text-3xl font-black mb-3">
-          Evento indisponível
-        </h1>
-
-        <p className="text-slate-400">
-          Esta sala não possui um evento ativo no momento.
-        </p>
-
-        <p className="text-slate-500 text-sm mt-3">
-          Aguarde o responsável iniciar um novo evento.
-        </p>
-      </div>
-    </main>
-  );
-}
 
   return (
     <main className="min-h-screen bg-slate-950 text-white p-8">
