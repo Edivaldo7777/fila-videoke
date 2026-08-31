@@ -751,44 +751,40 @@ if (
   });
 
   if (queueInsertError) {
-  console.error(
-    "Erro ao recolocar cantor no fim da fila:",
-    queueInsertError
-  );
-
-  await supabase
-    .from("current_singer")
-    .delete()
-    .eq(
-      "room_code",
-      roomCode
-    )
-    .eq(
-      "event_id",
-      room.current_event_id
+    console.error(
+      "Erro ao recolocar cantor no fim da fila:",
+      queueInsertError
     );
 
-  await supabase
-    .from("performances")
-    .delete()
-    .eq(
-      "id",
-      performance.id
-    )
-    .eq(
-      "room_code",
-      roomCode
-    )
-    .eq(
-      "event_id",
-      room.current_event_id
-    );
-
-  alert(
-    `Erro ao recolocar cantor na fila: ${queueInsertError.message}`
+    await supabase
+  .from("current_singer")
+  .delete()
+  .eq(
+    "room_code",
+    roomCode
+  )
+  .eq(
+    "event_id",
+    currentEventId
   );
-  return;
-}
+      .eq(
+        "event_id",
+        room.current_event_id
+      );
+
+    await supabase
+      .from("performances")
+      .delete()
+      .eq(
+        "id",
+        performance.id
+      );
+
+    alert(
+      `Erro ao recolocar cantor na fila: ${queueInsertError.message}`
+    );
+    return;
+  }
 
   const {
     error: profileUpdateError,
@@ -1126,24 +1122,9 @@ if (votesError) {
       .update({ status: "finished", ended_at: new Date().toISOString() })
       .eq("id", currentEventId);
 
+    await supabase.from("event_status").upsert({ room_code: roomCode, status: "awards" });
+    await supabase.from("rooms").update({ status: "encerrada" }).eq("room_code", roomCode);
     await supabase
-  .from("event_status")
-  .upsert({
-    room_code: roomCode,
-    status: "awards",
-  });
-
-await supabase
-  .from("rooms")
-  .update({
-    status: "encerrada",
-  })
-  .eq(
-    "room_code",
-    roomCode
-  );
-
-await supabase
   .from("queue")
   .delete()
   .eq(
@@ -1154,26 +1135,15 @@ await supabase
     "event_id",
     currentEventId
   );
+    await supabase.from("current_singer").delete().eq("room_code", roomCode);
 
-await supabase
-  .from("current_singer")
-  .delete()
-  .eq(
-    "room_code",
-    roomCode
-  )
-  .eq(
-    "event_id",
-    currentEventId
-  );
+    setCurrentSinger(null);
+    setCurrentScore(0);
+    setCurrentVotes(0);
+    setEventEnded(true);
+    setEndingEvent(false);
 
-setCurrentSinger(null);
-setCurrentScore(0);
-setCurrentVotes(0);
-setEventEnded(true);
-setEndingEvent(false);
-
-alert("Evento encerrado com sucesso!");
+    alert("Evento encerrado com sucesso!");
   }
 
   const estimatedMinutes = queue.length * 5;
