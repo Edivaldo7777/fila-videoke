@@ -18,10 +18,6 @@ export default function JuradoPage({
   const [eventMode, setEventMode] = useState("traditional");
   const [votingMode, setVotingMode] = useState("stars"); // Novo estado para o tipo de votação
   const [eventEnded, setEventEnded] = useState(false);
-  const [
-  currentPerformanceToken,
-  setCurrentPerformanceToken,
-] = useState("");
 
   useEffect(() => {
     async function init() {
@@ -180,9 +176,7 @@ useEffect(() => {
 
     const { data: room, error: roomError } = await supabase
       .from("rooms")
-      .select(
-         "current_event_id, status, voting_mode, event_mode"
-      )
+      .select("current_event_id, status, voting_mode")
       .eq("room_code", roomCode)
       .single();
 
@@ -195,11 +189,6 @@ useEffect(() => {
     if (room.voting_mode) {
       setVotingMode(room.voting_mode);
     }
-    if (room.event_mode) {
-  setEventMode(
-    room.event_mode
-  );
-}
 
     const ended = room.status === "encerrada";
     setEventEnded(ended);
@@ -233,29 +222,12 @@ useEffect(() => {
       return;
     }
 
-    if (
-  current?.singer_token &&
-  current.singer_token !==
-    currentPerformanceToken
-) {
-  setScore(null);
-  setMessage("");
+    setCurrentSinger(current || null);
 
-  setCurrentPerformanceToken(
-    current.singer_token
-  );
-}
-
-setCurrentSinger(
-  current || null
-);
-
-if (!current) {
-  setScore(null);
-  setMessage("");
-
-  setCurrentPerformanceToken("");
-}
+    if (!current) {
+      setScore(null);
+      setMessage("");
+    }
   }
 
   async function vote() {
